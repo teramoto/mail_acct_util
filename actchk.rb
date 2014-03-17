@@ -7,8 +7,6 @@ require 'mail'
 require 'nkf'
 require 'logger'
 
-$LOGPATH = '/var/log/ldapop.log'
-
 # handled by smtp.ray.co.jp 
 # $tdomain = [ "ray.co.jp", "plays.co.jp", "digisite.co.jp" ]
 # handled by sakura server www16276uf.sakura.ne.jp 
@@ -141,10 +139,11 @@ end
       gname = getgname(email) 
     end
   end 
-
-  log = Logger.new($LOGPATH) 
-  log.level = Logger::INFO
-  log.info("actchk.rb checking #{email}:name:#{name}")
+  if $logpath then 
+    log = Logger.new($logpath)
+    log.level = Logger::INFO
+    log.info("actchk.rb checking #{email}:name:#{name}")
+  end 
   popsrv = $host
   smtpsrv = $host
   puts "popcheck uid #{$uid}, #{popsrv}, #{passwd}" 
