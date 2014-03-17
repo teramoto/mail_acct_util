@@ -6,6 +6,45 @@ require 'logger'
 require 'tracer' 
 require 'romaji'
 
+begin 
+  fp = File.open('/var/log/ldap.log','a+')
+rescue 
+  $logpath = nil
+else 
+  $logpath = '/var/log/ldap.log'
+end 
+if $logpath == nil then 
+  begin 
+    fp = File.open('log/ldap.log','a+')
+  rescue => ex
+    STDERR.puts  ex  
+    STDERR.puts "can't open log file"
+  else 
+    if fp != nil then 
+      $logpath= 'log/ldap.log'
+    end
+  end
+end 
+begin 
+  fp = File.open('/var/log/ldapop.log','a+')
+rescue
+  $logpathop = nil
+else
+  $logpathop = '/var/log/ldapop.log'
+end
+if $logpathop == nil then
+  begin 
+    fp = File.open('log/ldap.logop','a+')
+  rescue => ex 
+    STDERR.puts ex 
+    STDERR.puts"can't open operation log file"
+    $logpathop == nil
+  else 
+    if fp != nil then 
+      $logpathop= 'log/ldapop.log'
+    end  
+  end
+end 
 #  handled by smtp.ray.co.jp
 $tdomain = [ "ray.co.jp", "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu", "tc-max.co.jp"  ]
 # handled by sakura server www16276uf.sakura.ne.jp
@@ -39,14 +78,15 @@ def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, 
   if (mail.index('@') != nil)  then 
     puts ("mail should not be with domain.(#{mail})" )
     exit (-1)
+  end
+  if $logpath then 
+    log = Logger.new($logpath)
+    log.level = Logger::WARN
   end 
-  log = Logger.new('/var/log/ldap.log')
-  log.level = Logger::WARN
-
   if (passwd == nil) || (passwd.length < 6) then 
     passwd = mkps8  
     puts "password:#{passwd}" if $DEBUG
-    log.warn(passwd) 
+    log.warn(passwd) if $logpath 
   end 
   ## check email address exists on ldap db.....
   attr = "mail"
@@ -70,7 +110,7 @@ def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, 
           puts entry if $DEBUG
           uidc = 0
           hits+= 1
-          log.warn("DN: #{entry.dn}")
+          log.warn("DN: #{entry.dn}") if $logpath 
           entry.each do |attribute, values|
             if attribute == 'uid' then
               uidc += 1
@@ -83,14 +123,14 @@ def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, 
             print "\n" if $DEBUG 
           end
           if uidc > 1 then
-            log.warn( "uid#{uidc}  error in #{entry.dn}")
+            log.warn( "uid#{uidc}  error in #{entry.dn}") if $logpath 
             puts ( "uid#{uidc}  error in #{entry.dn}") if $DEBUG 
           end
         end
-      log.info(ldap.get_operation_result)
+      log.info(ldap.get_operation_result) if $logpath 
       end
     rescue => ex
-      log.FATAL( ex)
+      log.FATAL( ex) if $logpath 
     end
     if hits > 0 then
       mailok = false 
@@ -173,15 +213,17 @@ def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, 
         ldap.add( :dn => dn, :attributes => attr ) 
         p ldap.get_operation_result  if $DEBUG #  .code 
         result = ldap.get_operation_result.to_s  #  .code 
-        log.info("added #{dn}" )
+        log.info("added #{dn}" ) if $logpath 
       end 
     end
   end 
 end
 
 def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
-  log = Logger.new('/var/log/ldap.log')
-  log.level = Logger::WARN
+  if $logpath then 
+    log = Logger.new($logpath)
+    log.level = Logger::WARN
+  end 
   puts "ldapvalue: #{ldap} #{attr} #{val}" 
   if ldap == "ldap.ray.co.jp" then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
@@ -202,13 +244,13 @@ def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
         puts "search result:#{entry}" 
         hits+= 1
         if ndattr == "DN" then
-##          log.warn("ldapvalue: #{ndattr}:DN: #{entry.dn}" )
+##          log.warn("ldapvalue: #{ndattr}:DN: #{entry.dn}" ) if $logpath 
           return entry.dn
         end
-##        log.warn("ldapvalue: DN: #{entry.dn} #{entry[ndattr][0]}")
+##        log.warn("ldapvalue: DN: #{entry.dn} #{entry[ndattr][0]}") if $logpath 
         return entry[ndattr][0]
       end
-##      log.info(ldap.get_operation_result)
+##      log.info(ldap.get_operation_result) if $logpath 
     end
     if hits == 0 then 
       return true 
@@ -216,13 +258,15 @@ def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
       return false
     end
 #  rescue => ex
-#    log.fatal( ex)
+#    log.fatal( ex) if $logpath 
 #    return true 
 #  end
 end 
 def hasattr(uid,attr, ldap)
-  log = Logger.new('/var/log/ldap.log')
-  log.level = Logger::WARN
+  if $logpath then 
+    log = Logger.new('/var/log/ldap.log')
+    log.level = Logger::WARN
+  end 
   if ldap == "ldap.ray.co.jp" then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
@@ -242,10 +286,10 @@ def hasattr(uid,attr, ldap)
         hits+= 1
         return entry[attr][0]
       end
-##      log.info(ldap.get_operation_result)
+##      log.info(ldap.get_operation_result) if $logpath 
     end
   rescue => ex
-    log.fatal( ex)
+    log.fatal( ex) if $logpath 
     return true 
   end
 end
@@ -278,16 +322,18 @@ end
 # ldifからemailを取り出して返す.
 #++
 def emcheck(email)
-  log = Logger.new('/var/log/ldap.log')
-  log.level = Logger::WARN
+  if $logpath then
+    log = Logger.new($logpath)
+    log.level = Logger::WARN
+  end 
   if email.index("@") == nil then
-    log.warn("error: no @ in #{email}") 
+    log.warn("error: no @ in #{email}") if $logpath 
     return true
   end
   bb = email.split('@')
   if $tdomain.index(bb[1]) == nil then
     ## not supported
-    ## log.warn("domain #{bb[1]} not supported." )
+    ## log.warn("domain #{bb[1]} not supported." ) if $logpath 
     return nil
   else
     id = bb[0]
@@ -300,8 +346,10 @@ end
 # 転送アドレスを取得
 #++
 def getfwd(addr, ldap)
-  log = Logger.new('/var/log/ldap.log')
-  log.level = Logger::INFO
+  if $logpath then 
+    log = Logger.new('/var/log/ldap.log')
+    log.level = Logger::INFO
+  end 
   if ldap == "wm2.ray.co.jp" then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
     treebase = "ou=Mail,dc=ray,dc=jp"
@@ -324,7 +372,7 @@ def getfwd(addr, ldap)
           if ((knd == '2') || (knd =='1')) then  ## make sure this is forward address 
             STDERR.puts entry
             hits+= 1
-            log.info("mailForward: DN: #{entry.dn} #{entry['mailForward'][0]}")
+            log.info("mailForward: DN: #{entry.dn} #{entry['mailForward'][0]}") if $debug
             return entry['mailForward'] 
           else 
             STDERR.puts("accountKind = #{entry['accountKind']}") 
@@ -337,7 +385,7 @@ def getfwd(addr, ldap)
       return true
     end
 #  rescue => ex
-    log.fatal( ex)
+    log.fatal( ex) if $logpath 
     return true
   end 
 #end
@@ -386,10 +434,14 @@ end
 # dn エントリーを削除
 #++ 
 def ldapdel(dn,host)
-  log = Logger.new('/var/log/ldap.log')
-  log.level = Logger::INFO
-  oplog = Logger.new('/var/log/ldapop.log')
-  oplog.level = Logger::INFO
+  if $logpath then 
+    log = Logger.new(i$logpath)
+    log.level = Logger::INFO
+  end
+  if $logpathop != nil then 
+    oplog = Logger.new($logpathop)
+    oplog.level = Logger::INFO
+  end
   if host == 'ldap.ray.co.jp' then  
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
   else 
@@ -403,20 +455,24 @@ def ldapdel(dn,host)
       result = ldap.delete :dn => dn 
       puts result 
       puts ldap.get_operation_result
-      oplog.info("#{dn} deleted,") 
+      oplog.info("#{dn} deleted,") if $logpathop  
       return result 
     end
   rescue => ex
-    log.fatal( ex)
+    log.fatal( ex) if $logpath 
     return true
   end 
 end
 
 def addattr(uid, attr, value) 
-  log = Logger.new('/var/log/ldap.log')
-  log.level = Logger::WARN
-  oplog = Logger.new('/var/log/ldapop.log')
-  oplog.level = Logger::INFO
+  if $logpath then 
+    log = Logger.new($logpath)
+    log.level = Logger::WARN
+  end 
+  if $logpathop then   
+    oplog = Logger.new($logpathop)
+    oplog.level = Logger::INFO
+  end 
   auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
   hits =0
   result = "not executed"
@@ -428,7 +484,7 @@ def addattr(uid, attr, value)
     $resdn = ""
     ldap.search(:base => treebase, :filter => filter ) do |entry|
 #      if entry.length > 1 then
-#        log.warn("fwedit: entry size =#{entry.size}")
+#        log.warn("fwedit: entry size =#{entry.size}") if $logpath 
 #      end
 #    puts entry
       $resdn = entry.dn
@@ -437,7 +493,7 @@ def addattr(uid, attr, value)
     result = ldap.replace_attribute($resdn, attr, value)
     return result 
   end
-  oplog.warn("addattr :DN: #{$resdn}: #{attr} : #{value} ")
+  oplog.warn("addattr :DN: #{$resdn}: #{attr} : #{value} ") if $logpathop
 end
 def vstr?( str)
   if str == nil then 
@@ -449,10 +505,14 @@ def vstr?( str)
 end 
 
 def fwedit(fwaddr, modaddr, cmd)
-  log = Logger.new('/var/log/ldap.log')
-  log.level = Logger::WARN
-  oplog = Logger.new('/var/log/ldapop.log')
-  oplog.level = Logger::INFO
+  if $logpath then 
+    log = Logger.new('/var/log/ldap.log')
+    log.level = Logger::WARN
+  end 
+  if $logpathop then 
+    oplog = Logger.new('/var/log/ldapop.log')
+    oplog.level = Logger::INFO
+  end 
   unless vstr?(cmd) then 
     STDERR.puts "Error: fwedit: cmd not defined."
     return nil
@@ -481,7 +541,7 @@ def fwedit(fwaddr, modaddr, cmd)
         $resdn = nil
         ldap.search(:base => treebase, :filter => filter ) do |entry|
   #        if entry.length > 1 then 
-  #          log.warn("fwedit: entry size =#{entry.size}")
+  #          log.warn("fwedit: entry size =#{entry.size}") if $logpath 
   #        end 
   #      puts entry
           $resdn = entry.dn
@@ -492,7 +552,7 @@ def fwedit(fwaddr, modaddr, cmd)
           puts "cannot find entry dn"
           return true 
         end
-#        log.warn("mailForward: #{cmd} DN: #{$resdn}")
+#        log.warn("mailForward: #{cmd} DN: #{$resdn}") if $logpath 
 #        p "$valx=#{$valx}"  
         if ($valx == nil ) then
           $valw = Array.new 
@@ -521,7 +581,7 @@ def fwedit(fwaddr, modaddr, cmd)
           puts "#{$valw.size} address in the list." 
           return result 
         else 
-          log.fatal("fwedit: cmd error = #{cmd}")
+          log.fatal("fwedit: cmd error = #{cmd}") if $logpath 
           return true 
         end
         $valx = $valw.join(',')
@@ -532,14 +592,14 @@ def fwedit(fwaddr, modaddr, cmd)
         res1 = ldap.get_operation_result 
         p res1 
         puts "operation result: #{res1}" 
-        oplog.info("ldap modify mailForward:#{fwaddr} #{cmd},#{modaddr} -#{$resdn}:#{res1}" )
+        oplog.info("ldap modify mailForward:#{fwaddr} #{cmd},#{modaddr} -#{$resdn}:#{res1}" ) if $logpathop
         puts "#{$valw.size} address in the list." 
         return result
       end
       puts "failed to open ldap"
       return true 
 #    rescue => ex
-      log.fatal( ex)
+      log.fatal( ex) if $logpath 
       p ex 
       return true 
 #    end
