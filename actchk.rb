@@ -55,7 +55,7 @@ begin
 end if deb 
 $account = ARGV[0] 
 if $account == nil || $account.length ==0 then 
-  puts "Acconut is invalid.(#{$account})" 
+  STDERR.puts "Acconut is invalid.(#{$account})" if deb 
   exit -1
 end
 $shain = ARGV[1]
@@ -63,13 +63,13 @@ if ((deb == true) ||( $resend == true )) then
   $adimnaddr =""  # don't send to admin, when debug  
 end   
 
-puts "$mailtest: #{$mailtest}" 
+puts "$mailtest: #{$mailtest}" if deb 
 
 bb = $account.split('@')
 p bb if deb 
 if bb == nil then  # check if email is valid
-  p bb
-  puts "#{$account} is invalid."
+  p bb if deb
+  puts "#{$account} is invalid." if deb
   exit -1
 end 
 if bb.size == 1 then
@@ -93,8 +93,8 @@ elsif $udomain.index(bb[1]) then
   $domain = bb[1]
   $ldap = "wm2.ray.co.jp" 
 else 
-  puts "Domain #{bb[1]} is not supported."
-  puts "uid = #{bb[0]}" 
+  STDERR.puts "Domain #{bb[1]} is not supported."
+  STDERR.puts "uid = #{bb[0]}" 
   exit -1
 end 
 
@@ -157,7 +157,7 @@ end
   end 
   popsrv = $host
   smtpsrv = $host
-  if ($mailtest || ($supress == false)) then # do mail test 
+  if (($mailtest == true) || ($supress == true)) then # do mail test 
     puts "popcheck uid #{$uid}, #{popsrv}, #{passwd}" 
     res = popcheck($uid , popsrv, passwd, deb )
     if res then
@@ -304,7 +304,7 @@ end
     $tlist.push("メールパスワード")
     $tlist.push("パスワード読み")
 
-    $clist.push(nm)
+    $clist.push(name)
     $clist.push(email)
     $clist.push($uid)
     $clist.push(passwd)
@@ -418,6 +418,7 @@ end
     $mess1 += anp.join("\n")+ "\n"+ "-"*70 + "\n"
   end 
   if $csv then 
+    puts $tlist.join(',')
     puts $clist.join(',')
   else  
     puts "sending report via email......" 
