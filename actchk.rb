@@ -24,6 +24,7 @@ $gp = Array.new
 $adm = Array.new 
 $mailtest = true # do email test is default 
 $csv = false
+$supress = false 
 passwd = "" 
 name = "" 
 deb = false 
@@ -40,9 +41,9 @@ opt.on('-j', 'jobnet was set ') { $jn = true }
 opt.on('-i', 'intra was set ') { $intra = true }
 opt.on('-a', 'anpi was set ') { $an = true }
 opt.on('-r', 're-send setting information(s).') { $resend = true } 
-opt.on('-x', 'do not execut test') { $mailtest = false } 
+opt.on('-x', 'do not execute test') { $mailtest = false } 
 opt.on('-y', 'output report as csv file') { $csv = true } 
-
+opt.on('-s', 'supress email information') { $supress = true } 
 rr = opt.parse!(ARGV)
 begin  
   p ARGV
@@ -58,16 +59,12 @@ if $account == nil || $account.length ==0 then
   exit -1
 end
 $shain = ARGV[1]
-if $shain == nil then 
-  $shain = "-9999" 
-end 
-if $shain.length < 4 then  
-  puts "Need shain number..."
-  exit -1 
-end 
 if ((deb == true) ||( $resend == true )) then 
   $adimnaddr =""  # don't send to admin, when debug  
 end   
+
+puts "$mailtest: #{$mailtest}" 
+
 bb = $account.split('@')
 p bb if deb 
 if bb == nil then  # check if email is valid
@@ -143,6 +140,16 @@ end
       gname = getgname(email) 
     end
   end 
+  if $shain == nil || $shain.length ==0  then
+    $shain = ldapvalue( "mail", email, "employeeNumber",$ldap) 
+    if $shain == nil || $shain.length == 0 then 
+      $shain = "-9999" 
+    end 
+  end 
+  if $shain.length < 4 then  
+    puts "Need shain number..."
+    exit -1 
+  end 
   if $logpath then 
     log = Logger.new($logpath)
     log.level = Logger::INFO
@@ -150,7 +157,7 @@ end
   end 
   popsrv = $host
   smtpsrv = $host
-  if $mailtest then # do mail test 
+  if ($mailtest || ($supress == false)) then # do mail test 
     puts "popcheck uid #{$uid}, #{popsrv}, #{passwd}" 
     res = popcheck($uid , popsrv, passwd, deb )
     if res then
@@ -196,8 +203,12 @@ end
   end 
   p report
   $slist = Array.new  
-  $clist = Array.new 
-  $slist.push("e-mail")
+  $clist = Array.new
+  $tlist = Array.new 
+
+  if !$supress then  
+    $slist.push("e-mail")
+  end 
   ## additional e-mail ??
 
   if $intra then 
@@ -286,12 +297,18 @@ end
     body.push("メールPass:#{passwd}")
     body.push("(#{passread})")
     body.push("")
-    # for csv 
+    # for csv
+    $tlist.push("名前") 
+    $tlist.push("e-mail")
+    $tlist.push("メールID")
+    $tlist.push("メールパスワード")
+    $tlist.push("パスワード読み")
+
     $clist.push(nm)
-    $clist.push("e-mail:#{email}")
-    $clist.push("メールID:#{$uid}")
-    $clist.push("メールPass:#{passwd}")
-    $clist.push("(#{passread})")
+    $clist.push(email)
+    $clist.push($uid)
+    $clist.push(passwd)
+    $clist.push(passread)
 
     if $gp.size > 0 then 
       body.push( "所属グループメール：#{grp}")
@@ -338,7 +355,10 @@ end
     intr[0] = "イントラログインID:#{$shain}"
     intr[1] = "イントラ初期パスワード:#{passwd}"
     intr[2] = "(#{passread})" 
-    # csv section 
+    # csv section
+    $tlist.push("イントラログインID")
+    $tlist.push("イントラ初期パスワード")
+    $tlist.push("イントラパスワード読み") 
     $clist.push($shain)
     $clist.push(passwd)
     $clist.push(passread)
@@ -356,8 +376,12 @@ end
     jb[1] = "Jobnet初期パスワード:#{passwd}"
     jb[2] = "(#{passread})"
     # csv 
+    $tlist.push("JobnetログインID")
+    $tlist.push("Jobnet初期パスワード")
+    $tlist.push("Jobnetパスワード読み") 
     $clist.push($shain)
     $clist.push(passwd)
+    $clist.push(passread)
   
     jb[4] = "http://jobnet.ray.co.jp/rj/ " 
     $mess1 += jb.join("\n") + "\n"+ "-"*70 + "\n"
@@ -369,8 +393,12 @@ end
     lng[2] = "(#{passread})" 
     lng[3] = "http://linguinet.ray.co.jp/xpoint/login.jsp?domCd=RAY" 
     # csv 
+    $tlist.push("稟議ネットログインID")
+    #tliat.push("稟議ネット初期パスワード")
+    $tlist.push("稟議ネットパスワード読み") 
     $clist.push($shain) 
     $clist.push(passwd)
+    $clist.push(passread)
     $mess1 += lng.join("\n") + "\n"+ "-"*70 + "\n"
   end 
   if $an then 
@@ -380,6 +408,9 @@ end
     anp[2] = "安否確認システム初期パスワード:4317"
     anp[3] = "https://www.e-kakushin.com/login/" 
     # csv 
+    $tlist.push( "安否確認システム企業コード")
+    $tlist.push( "安否確認システムユーザーID")
+    $tlist.push( "安否確認システム初期パスワード")
     $clist.push("4317")
     $clist.push($shain)
     $clist.push("4317")
