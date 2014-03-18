@@ -5,7 +5,9 @@ require 'net/ldap'
 require 'logger'
 require 'tracer' 
 require 'romaji'
-
+#-
+# Decide path for log file.
+#++ 
 begin 
   fp = File.open('/var/log/ldap.log','a+')
 rescue 
@@ -34,7 +36,7 @@ else
 end
 if $logpathop == nil then
   begin 
-    fp = File.open('log/ldap.logop','a+')
+    fp = File.open('log/ldapop.log','a+')
   rescue => ex 
     STDERR.puts ex 
     STDERR.puts"can't open operation log file"
@@ -45,6 +47,9 @@ if $logpathop == nil then
     end  
   end
 end 
+#-
+# global arrays for domains handled 
+#++ 
 #  handled by smtp.ray.co.jp
 $tdomain = [ "ray.co.jp", "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu", "tc-max.co.jp"  ]
 # handled by sakura server www16276uf.sakura.ne.jp
@@ -52,8 +57,9 @@ $udomain = [ "ss.ray.co.jp" , "nissayseminar.jp", "nissayspeech.jp", "mcray.jp",
 $vdomain = [ "wes.co.jp" ]  # web areana 
 $wdomain = [ "tc-max.co.jp" ] 
 $cdomain = [ "ray.co.jp" , "digisite.co.jp", "plays.co.jp" ]
-#
-#get ldap host from email  
+#-
+# get ldap host from email  
+#++
 def getldap( email )  
   if email == nil then 
     return true 
@@ -67,10 +73,15 @@ def getldap( email )
     return  'ldap.ray.co.jp'
   elsif $udomain.index(ld[1]) then
     return  'wm2.ray.co.jp'
+  else 
+    return nil  # no ldap server to use...
   end 
 end
 
+#-
+# output ldap 
 # mode = 1 : create, 2 : reset 
+#++
 def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, traddr)
 
   wrok = true  # control output to ldif database 
@@ -219,6 +230,9 @@ def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, 
   end 
 end
 
+#-
+# return value for specific attribute. 
+#++
 def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
   if $logpath then 
     log = Logger.new($logpath)
@@ -261,10 +275,14 @@ def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
 #    log.fatal( ex) if $logpath 
 #    return true 
 #  end
-end 
+end
+
+#-
+# Check if ldap record has attribute.
+#++ 
 def hasattr(uid,attr, ldap)
   if $logpath then 
-    log = Logger.new('/var/log/ldap.log')
+    log = Logger.new($logpath)
     log.level = Logger::WARN
   end 
   if ldap == "ldap.ray.co.jp" then 
@@ -293,7 +311,9 @@ def hasattr(uid,attr, ldap)
     return true 
   end
 end
-
+#-
+# get password from ldap 
+#++
 def getpass(email)
   ldap = getldap(email)
   if  ldap == true then 
@@ -302,7 +322,9 @@ def getpass(email)
     return ldapvalue( 'mail', email , 'userPassword', ldap)
   end 
 end
-
+#-
+# get name record of specific e-mail address 
+#++
 def getname(email )
   if (ldap = getldap(email)) == true then 
     return true 
@@ -310,7 +332,9 @@ def getname(email )
     return ldapvalue( 'mail', email , 'cn', ldap)
   end 
 end
-
+#-
+# get given name for specific email address 
+#++
 def getgname(email )
   if (ldap = getldap(email)) == true then 
     return true 
@@ -347,7 +371,7 @@ end
 #++
 def getfwd(addr, ldap)
   if $logpath then 
-    log = Logger.new('/var/log/ldap.log')
+    log = Logger.new($logpath)
     log.level = Logger::INFO
   end 
   if ldap == "wm2.ray.co.jp" then 
@@ -390,7 +414,7 @@ def getfwd(addr, ldap)
   end 
 #end
 #-
-# DN エントリーのすべてのデータを返す
+# DN エントリーのすべてのデータを表示知する。
 #++ 
 def ldapdisplay(treebase, id, value)
   if (treebase== nil) || (id == nil) || (value== nil)then 
@@ -464,6 +488,9 @@ def ldapdel(dn,host)
   end 
 end
 
+#-
+# Add attribute.... 
+#++ 
 def addattr(uid, attr, value) 
   if $logpath then 
     log = Logger.new($logpath)
@@ -495,6 +522,9 @@ def addattr(uid, attr, value)
   end
   oplog.warn("addattr :DN: #{$resdn}: #{attr} : #{value} ") if $logpathop
 end
+#-
+#  check string is valid (not nil and length > -)
+#++
 def vstr?( str)
   if str == nil then 
     return false
@@ -503,14 +533,16 @@ def vstr?( str)
   end 
   return true
 end 
-
+#-
+# edit forwading address.. ( add, del members. )
+#++ 
 def fwedit(fwaddr, modaddr, cmd)
   if $logpath then 
-    log = Logger.new('/var/log/ldap.log')
+    log = Logger.new($logpath)
     log.level = Logger::WARN
   end 
   if $logpathop then 
-    oplog = Logger.new('/var/log/ldapop.log')
+    oplog = Logger.new($logpathop)
     oplog.level = Logger::INFO
   end 
   unless vstr?(cmd) then 
@@ -584,6 +616,8 @@ def fwedit(fwaddr, modaddr, cmd)
           log.fatal("fwedit: cmd error = #{cmd}") if $logpath 
           return true 
         end
+
+
         $valx = $valw.join(',')
         puts $resdn 
         result = ldap.replace_attribute $resdn, :mailForward, $valx 
@@ -608,7 +642,9 @@ def fwedit(fwaddr, modaddr, cmd)
     return true
   end 
 end 
-  
+#-
+# return Japanese reading of ascii letters...
+#++  
 def kanayomi(pass)
   trns =  [ "えー", "びー",  "しー", "でぃー", "いー","えふ",  "じー", "えいち",  "あい","じぇい",  "けい",  "える","えむ","えぬ","おー","ぴー","きゅー", "あーる", "えす","てぃー" ,"ゆー","ぶい", "だぶりゅー","えっくす","わい","ぜっと","みぎかっこ","えんまーく","ひだりかっこ","やまがた","あんだーばー","いんよう","えー", "びー",  "しー", "でぃー", "いー","えふ",  "じー", "えいち",  "あい","じぇい",  "けい",  "える","えむ","えぬ","おー","ぴー","きゅー", "あーる", "えす","てぃー" ,"ゆー","ぶい", "だぶりゅー","えっくす","わい","ぜっと","みぎだいかっこ","たてぼう","ひだりだいかっこ","てん","さくじょ" ]
   ##  !"#$%&'()*+,-./=> 32..47
@@ -642,6 +678,9 @@ def kanayomi(pass)
   return res
 end 
 
+#-
+# convert second to day, hour,min,sec string 
+#++
 def dhms(sec)
   d = sec / (60 * 60 * 24)
   t = sec - (d * 60 * 60 * 24)
@@ -652,6 +691,9 @@ def dhms(sec)
   return sprintf("%02d:%02d:%02d:%02d", d,h,m,s)
 end
 
+#-
+# Check the string is valid email address
+#++
 def valid_email_address?(str)
 	ans = false
         if str =~ /[\*\\\?]/ then 

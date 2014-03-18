@@ -22,6 +22,8 @@ $cc = Array.new
 $to = Array.new 
 $gp = Array.new
 $adm = Array.new 
+$mailtest = true # do email test is default 
+$csv = false
 passwd = "" 
 name = "" 
 deb = false 
@@ -38,6 +40,8 @@ opt.on('-j', 'jobnet was set ') { $jn = true }
 opt.on('-i', 'intra was set ') { $intra = true }
 opt.on('-a', 'anpi was set ') { $an = true }
 opt.on('-r', 're-send setting information(s).') { $resend = true } 
+opt.on('-x', 'do not execut test') { $mailtest = false } 
+opt.on('-y', 'output report as csv file') { $csv = true } 
 
 rr = opt.parse!(ARGV)
 begin  
@@ -146,50 +150,53 @@ end
   end 
   popsrv = $host
   smtpsrv = $host
-  puts "popcheck uid #{$uid}, #{popsrv}, #{passwd}" 
-  res = popcheck($uid , popsrv, passwd, deb )
-  if res then
-    fail += 1  
-    report.push  "#{$uid}:受信テスト失敗.#{Time.now}"
-  else
-    pass +=1 
-    report.push  "受信テスト成功.#{Time.now}"
-  end
-## check smtp delivery 
-  res = smtpcheck( $uid , smtpsrv , 'xxxxx' , email , 'r', deb, $domain )
-  if res then
-    fail += 1 
-    report.push  "#{$uid}:送信テスト失敗.#{Time.now}"
-  else
-    pass +=1 
-    report.push  "送信テスト成功.#{Time.now}"
-  end
-## check reg to spam filter  
-  if $cdomain.index($domain) then 
-    res = smtpcheck( $uid , 'cluster5.us.messagelabs.com', 'xxxxx' , email , 'r', deb, $domain)
+  if $mailtest then # do mail test 
+    puts "popcheck uid #{$uid}, #{popsrv}, #{passwd}" 
+    res = popcheck($uid , popsrv, passwd, deb )
     if res then
       fail += 1  
-      report.push  "#{$uid}:SPAMフィルター送信テスト失敗.#{Time.now}"
+      report.push  "#{$uid}:受信テスト失敗.#{Time.now}"
     else
       pass +=1 
-      report.push  "SPAMフィルター送信テスト成功.#{Time.now}"
+      report.push  "受信テスト成功.#{Time.now}"
     end
-  else 
-    ## pass spam filter test 
-    puts "Spam filter test is skipped." 
+  ## check smtp delivery 
+    res = smtpcheck( $uid , smtpsrv , 'xxxxx' , email , 'r', deb, $domain )
+    if res then
+      fail += 1 
+      report.push  "#{$uid}:送信テスト失敗.#{Time.now}"
+    else
+      pass +=1 
+      report.push  "送信テスト成功.#{Time.now}"
+    end
+  ## check reg to spam filter  
+    if $cdomain.index($domain) then 
+      res = smtpcheck( $uid , 'cluster5.us.messagelabs.com', 'xxxxx' , email , 'r', deb, $domain)
+      if res then
+        fail += 1  
+        report.push  "#{$uid}:SPAMフィルター送信テスト失敗.#{Time.now}"
+      else
+        pass +=1 
+        report.push  "SPAMフィルター送信テスト成功.#{Time.now}"
+      end
+    else 
+      ## pass spam filter test 
+      puts "Spam filter test is skipped." 
+    end 
+  ## check smtp auth  
+    puts "$uid: #{$uid}, $uid0: #{$uid0} $domain: #{$domain}" 
+    res = smtpcheck( $uid , smtpsrv, passwd , 'ken7wiz@ybb.ne.jp' , 'a', deb, $domain )
+    if res then 
+      fail += 1 
+      report.push  "#{$uid}:AUTH送信テスト失敗.#{Time.now}"
+    else
+      pass +=1 
+      report.push  "AUTH送信テスト成功.#{Time.now}"
+    end
   end 
-## check smtp auth  
-  puts "$uid: #{$uid}, $uid0: #{$uid0} $domain: #{$domain}" 
-  res = smtpcheck( $uid , smtpsrv, passwd , 'ken7wiz@ybb.ne.jp' , 'a', deb, $domain )
-  if res then 
-    fail += 1 
-    report.push  "#{$uid}:AUTH送信テスト失敗.#{Time.now}"
-  else
-    pass +=1 
-    report.push  "AUTH送信テスト成功.#{Time.now}"
-  end
   p report
   $slist = Array.new  
+  $clist = Array.new 
   $slist.push("e-mail")
   ## additional e-mail ??
 
@@ -205,6 +212,10 @@ end
   if $an then 
     $slist.push("安否確認システム")
   end
+  unless $mailtest 
+    fail=0
+    pass=4
+  end 
   $sl = $slist.join("、")
   puts "pass:#{pass}, fail:#{fail}" 
   if (fail > 0)  then 
@@ -220,7 +231,14 @@ end
     $toaddr = $to.join(",")
     $ccaddr = $cc.join(',')
     $subj = "#{$sl}設定完了報告"
-# mail result to user 
+# mail result to user
+#    p Mail.defaults 
+#    Mail.defaults do 
+#      delivery_method(:smtp ,
+#      port: 587 
+#    )
+#    end  
+
     mail = Mail.new
     mail.charset = 'ISO-2022-JP' 
     mail.from = 'ken@ray.co.jp'
@@ -268,6 +286,13 @@ end
     body.push("メールPass:#{passwd}")
     body.push("(#{passread})")
     body.push("")
+    # for csv 
+    $clist.push(nm)
+    $clist.push("e-mail:#{email}")
+    $clist.push("メールID:#{$uid}")
+    $clist.push("メールPass:#{passwd}")
+    $clist.push("(#{passread})")
+
     if $gp.size > 0 then 
       body.push( "所属グループメール：#{grp}")
     else 
@@ -313,7 +338,11 @@ end
     intr[0] = "イントラログインID:#{$shain}"
     intr[1] = "イントラ初期パスワード:#{passwd}"
     intr[2] = "(#{passread})" 
-
+    # csv section 
+    $clist.push($shain)
+    $clist.push(passwd)
+    $clist.push(passread)
+   
     ps = get_last_line("pass.txt")
     
     intr[3] = "今月の会社ID:#{ps}"
@@ -326,6 +355,9 @@ end
     jb[0] = "JobnetログインID:#{$shain}"
     jb[1] = "Jobnet初期パスワード:#{passwd}"
     jb[2] = "(#{passread})"
+    # csv 
+    $clist.push($shain)
+    $clist.push(passwd)
   
     jb[4] = "http://jobnet.ray.co.jp/rj/ " 
     $mess1 += jb.join("\n") + "\n"+ "-"*70 + "\n"
@@ -336,6 +368,9 @@ end
     lng[1] = "稟議ネット初期パスワード:#{passwd}"
     lng[2] = "(#{passread})" 
     lng[3] = "http://linguinet.ray.co.jp/xpoint/login.jsp?domCd=RAY" 
+    # csv 
+    $clist.push($shain) 
+    $clist.push(passwd)
     $mess1 += lng.join("\n") + "\n"+ "-"*70 + "\n"
   end 
   if $an then 
@@ -344,16 +379,28 @@ end
     anp[1] = "安否確認システムユーザーID:#{$shain}"
     anp[2] = "安否確認システム初期パスワード:4317"
     anp[3] = "https://www.e-kakushin.com/login/" 
+    # csv 
+    $clist.push("4317")
+    $clist.push($shain)
+    $clist.push("4317")
+
     $mess1 += anp.join("\n")+ "\n"+ "-"*70 + "\n"
   end 
-
-  puts "sending report via email......" 
-  mail.body  =  NKF.nkf('-Wj', $mess1).force_encoding("ASCII-8BIT")
-  mail.subject = NKF.nkf('-WMm0j', $subj).force_encoding("ASCII-8BIT")
-  if deb then 
-    puts mail.body
-    mail.deliver 
-  else 
-    mail.deliver 
+  if $csv then 
+    puts $clist.join(',')
+  else  
+    puts "sending report via email......" 
+    mail.body  =  NKF.nkf('-Wj', $mess1).force_encoding("ASCII-8BIT")
+    mail.subject = NKF.nkf('-WMm0j', $subj).force_encoding("ASCII-8BIT")
+    begin 
+      if deb then 
+        puts mail.body
+        mail.deliver 
+      else 
+        mail.deliver 
+      end
+    rescue => ex
+      p ex
+    end 
   end
-end 
+end  
