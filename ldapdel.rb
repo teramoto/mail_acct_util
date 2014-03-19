@@ -7,7 +7,7 @@ require 'optparse'
 require 'logger' 
 
 puts "deleting address.."
-puts "address to del, cmd (add,del)" 
+puts "address to delete" 
 
 ## main start
 opt = OptionParser.new
@@ -19,8 +19,36 @@ opt.on('-d ', 'debug mode ') { deb = true }
 puts ARGV[0] ,ARGV[1], ARGV[2]
 rr = opt.parse!(ARGV)
 #puts getfwd ARGV[0]
-if ARGV[0].index('ss.ray.co.jp') != nil then 
-  ldapdel("uid=#{ARGV[0]},ou=Mail,dc=ray,dc=jp", 'wm2.ray.co.jp')
-else 
-  ldapdel("uid=#{ARGV[0]},ou=Mail,dc=ray,dc=co,dc=jp", 'ldap.ray.co.jp')
-end 
+wid = ARGV[0].split('@')
+if wid == nil then 
+  STDERR.puts "Invalid email address."
+  exit(-1)
+end
+if wid[0] == nil then 
+  STDERR.puts "local not exist.#{ARGV[0]}"
+  exit(-1)
+end
+if wid[1] == nil then 
+  STDERR.puts "domain not exist.#{ARGV[0]}" 
+  exit(-1)
+end
+
+email = ARGV[0] 
+uid = wid[0]  
+domain = wid[1]
+ldap = getldap(email)
+case wid[1] #  domain part 
+when 'ray.co.jp'
+    ldapdel("uid=#{uid},ou=Mail,dc=ray,dc=co,dc=jp", ldap)
+when 'ss.ray.co.jp' 
+    ldapdel("uid=#{email},ou=Mail,dc=ray,dc=co,dc=jp", ldap)
+else
+  case ldap
+  when 'ldap.ray.co.jp'
+    ldapdel("uid=#{email},ou=Mail,dc=ray,dc=co,dc=jp", ldap)
+  when 'wm2.ray.co.jp'
+    ldapdel("uid=#{email},ou=Mail,dc=ray,dc=jp", ldap)
+  else 
+    STDERR.puts("ldap server error.")
+  end 
+end

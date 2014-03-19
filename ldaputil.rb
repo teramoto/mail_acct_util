@@ -5,9 +5,13 @@ require 'net/ldap'
 require 'logger'
 require 'tracer' 
 require 'romaji'
-#-
+#
+# debug mode is controlled via $deb 
+#
+
+#
 # Decide path for log file.
-#++ 
+# 
 begin 
   fp = File.open('/var/log/ldap.log','a+')
 rescue 
@@ -47,9 +51,9 @@ if $logpathop == nil then
     end  
   end
 end 
-#-
+#
 # global arrays for domains handled 
-#++ 
+# 
 #  handled by smtp.ray.co.jp
 $tdomain = [ "ray.co.jp", "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu", "tc-max.co.jp"  ]
 # handled by sakura server www16276uf.sakura.ne.jp
@@ -57,16 +61,16 @@ $udomain = [ "ss.ray.co.jp" , "nissayseminar.jp", "nissayspeech.jp", "mcray.jp",
 $vdomain = [ "wes.co.jp" ]  # web areana 
 $wdomain = [ "tc-max.co.jp" ] 
 $cdomain = [ "ray.co.jp" , "digisite.co.jp", "plays.co.jp" ]
-#-
+#
 # get ldap host from email  
-#++
+#
 def getldap( email )  
   if email == nil then 
     return true 
   end 
   ld = email.split('@')
   if ld == nil then 
-    puts "invalid email #{email}" 
+    STDERR.puts "invalid email #{email}" 
     return true 
   end 
   if $tdomain.index(ld[1]) then
@@ -78,16 +82,16 @@ def getldap( email )
   end 
 end
 
-#-
+#
 # output ldap 
 # mode = 1 : create, 2 : reset 
-#++
+#
 def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, traddr)
 
   wrok = true  # control output to ldif database 
   mode = 1 
   if (mail.index('@') != nil)  then 
-    puts ("mail should not be with domain.(#{mail})" )
+    STDERR.puts ("mail should not be with domain.(#{mail})" )
     exit (-1)
   end
   if $logpath then 
@@ -96,46 +100,46 @@ def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, 
   end 
   if (passwd == nil) || (passwd.length < 6) then 
     passwd = mkps8  
-    puts "password:#{passwd}" if $DEBUG
+    puts "password:#{passwd}" if $deb
     log.warn(passwd) if $logpath 
   end 
   ## check email address exists on ldap db.....
   attr = "mail"
   target = mail + "@" + domain
 
-  puts target if $DEBUG
+  puts target if $deb
   if $tdomain.index(domain) != nil && mode !=2  then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     hits=0
     if domain == "tc-max.co.jp" then 
-      puts ("Warning! #{domain} support is under development.")
+      STDERR.puts ("Warning! #{domain} support is under development.")
     end 
     result = "not executed" 
     begin
       Net::LDAP.open(:host =>'ldap.ray.co.jp',:port => 389 , :auth => auth  ) do |ldap|
       #  ,:encryption => :simple_tls # ldap.port = 389 636
         filter = Net::LDAP::Filter.eq( attr, target)
-        p filter if $DEBUG 
+        p filter if $deb 
         treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
         ldap.search(:base => treebase, :filter => filter ) do |entry|
-          puts entry if $DEBUG
+          puts entry if $deb
           uidc = 0
           hits+= 1
           log.warn("DN: #{entry.dn}") if $logpath 
           entry.each do |attribute, values|
             if attribute == 'uid' then
               uidc += 1
-              puts "<#{attribute}>" if $DEBUG
+              puts "<#{attribute}>" if $deb
             end
-            print " #{attribute}:" if $DEBUG
+            print " #{attribute}:" if $deb
             values.each do |value|
-              print "#{value}" if $DEBUG
+              print "#{value}" if $deb
             end
-            print "\n" if $DEBUG 
+            print "\n" if $deb 
           end
           if uidc > 1 then
             log.warn( "uid#{uidc}  error in #{entry.dn}") if $logpath 
-            puts ( "uid#{uidc}  error in #{entry.dn}") if $DEBUG 
+            puts ( "uid#{uidc}  error in #{entry.dn}") if $deb 
           end
         end
       log.info(ldap.get_operation_result) if $logpath 
@@ -219,10 +223,10 @@ def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, 
       Net::LDAP.open(:host =>'ldap.ray.co.jp',:port => 389 , :auth => auth  ) do |ldap|
         #  ,:encryption => :simple_tls # ldap.port = 389 636
       #    p filter
-        p dn if $DEBUG 
-        p attr if $DEBUG
+        p dn if $deb 
+        p attr if $deb
         ldap.add( :dn => dn, :attributes => attr ) 
-        p ldap.get_operation_result  if $DEBUG #  .code 
+        p ldap.get_operation_result  if $deb #  .code 
         result = ldap.get_operation_result.to_s  #  .code 
         log.info("added #{dn}" ) if $logpath 
       end 
@@ -230,15 +234,14 @@ def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, 
   end 
 end
 
-#-
+#
 # return value for specific attribute. 
-#++
+#
 def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
   if $logpath then 
     log = Logger.new($logpath)
     log.level = Logger::WARN
   end 
-  puts "ldapvalue: #{ldap} #{attr} #{val}" 
   if ldap == "ldap.ray.co.jp" then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
@@ -246,7 +249,6 @@ def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   end 
-  p auth 
   hits =0
   result = "not executed" 
 #  begin
@@ -255,7 +257,6 @@ def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
       filter = Net::LDAP::Filter.eq( attr, val)
 #    p filter
       ldap.search(:base => treebase, :filter => filter ) do |entry|
-        puts "search result:#{entry}" 
         hits+= 1
         if ndattr == "DN" then
 ##          log.warn("ldapvalue: #{ndattr}:DN: #{entry.dn}" ) if $logpath 
@@ -277,9 +278,9 @@ def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
 #  end
 end
 
-#-
+#
 # Check if ldap record has attribute.
-#++ 
+# 
 def hasattr(uid,attr, ldap)
   if $logpath then 
     log = Logger.new($logpath)
@@ -300,7 +301,7 @@ def hasattr(uid,attr, ldap)
       filter = Net::LDAP::Filter.eq( 'uid', uid)
 #    p filter
       ldap.search(:base => treebase, :filter => filter ) do |entry|
-      puts entry
+      puts entry if $deb
         hits+= 1
         return entry[attr][0]
       end
@@ -311,9 +312,9 @@ def hasattr(uid,attr, ldap)
     return true 
   end
 end
-#-
+#
 # get password from ldap 
-#++
+#
 def getpass(email)
   ldap = getldap(email)
   if  ldap == true then 
@@ -322,9 +323,9 @@ def getpass(email)
     return ldapvalue( 'mail', email , 'userPassword', ldap)
   end 
 end
-#-
+#
 # get name record of specific e-mail address 
-#++
+#
 def getname(email )
   if (ldap = getldap(email)) == true then 
     return true 
@@ -332,9 +333,9 @@ def getname(email )
     return ldapvalue( 'mail', email , 'cn', ldap)
   end 
 end
-#-
+#
 # get given name for specific email address 
-#++
+#
 def getgname(email )
   if (ldap = getldap(email)) == true then 
     return true 
@@ -342,9 +343,9 @@ def getgname(email )
     return ldapvalue( 'mail', email , 'givenName',getldap(email))
   end 
 end
-#-
+#
 # ldifからemailを取り出して返す.
-#++
+#
 def emcheck(email)
   if $logpath then
     log = Logger.new($logpath)
@@ -366,9 +367,9 @@ def emcheck(email)
   return ldapvalue('mail', email, 'mail', $ldap)
 end
 
-#-
+#
 # 転送アドレスを取得
-#++
+#
 def getfwd(addr, ldap)
   if $logpath then 
     log = Logger.new($logpath)
@@ -413,16 +414,16 @@ def getfwd(addr, ldap)
     return true
   end 
 #end
-#-
+#
 # DN エントリーのすべてのデータを表示知する。
-#++ 
+# 
 def ldapdisplay(treebase, id, value)
   if (treebase== nil) || (id == nil) || (value== nil)then 
-    puts "Bad parameters," if $DEBUG
+    puts "Bad parameters," if $deb
     return nil
   end 
   if (treebase.length< 1) || (id.length< 1 ) || (value.length <1)then 
-    puts "Bad parameters," if $DEBUG
+    puts "Bad parameters," if $deb
     return nil
   end 
   auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => 'ray00' }
@@ -454,12 +455,12 @@ def ldapdisplay(treebase, id, value)
 end 
 
 
-#-
+#
 # dn エントリーを削除
-#++ 
+# 
 def ldapdel(dn,host)
   if $logpath then 
-    log = Logger.new(i$logpath)
+    log = Logger.new($logpath)
     log.level = Logger::INFO
   end
   if $logpathop != nil then 
@@ -473,7 +474,7 @@ def ldapdel(dn,host)
   end 
   hits =0
   result = "not executed"
-  puts "dn = #{dn}" if $DEBUG 
+  puts "dn = #{dn}" if $deb 
   begin
     Net::LDAP.open(:host => host ,:port => 389 , :auth => auth  ) do |ldap|
       result = ldap.delete :dn => dn 
@@ -488,9 +489,9 @@ def ldapdel(dn,host)
   end 
 end
 
-#-
+#
 # Add attribute.... 
-#++ 
+# 
 def addattr(uid, attr, value) 
   if $logpath then 
     log = Logger.new($logpath)
@@ -522,9 +523,9 @@ def addattr(uid, attr, value)
   end
   oplog.warn("addattr :DN: #{$resdn}: #{attr} : #{value} ") if $logpathop
 end
-#-
+#
 #  check string is valid (not nil and length > -)
-#++
+#
 def vstr?( str)
   if str == nil then 
     return false
@@ -533,9 +534,9 @@ def vstr?( str)
   end 
   return true
 end 
-#-
+#
 # edit forwading address.. ( add, del members. )
-#++ 
+# 
 def fwedit(fwaddr, modaddr, cmd)
   if $logpath then 
     log = Logger.new($logpath)
@@ -642,9 +643,9 @@ def fwedit(fwaddr, modaddr, cmd)
     return true
   end 
 end 
-#-
+#
 # return Japanese reading of ascii letters...
-#++  
+#  
 def kanayomi(pass)
   trns =  [ "えー", "びー",  "しー", "でぃー", "いー","えふ",  "じー", "えいち",  "あい","じぇい",  "けい",  "える","えむ","えぬ","おー","ぴー","きゅー", "あーる", "えす","てぃー" ,"ゆー","ぶい", "だぶりゅー","えっくす","わい","ぜっと","みぎかっこ","えんまーく","ひだりかっこ","やまがた","あんだーばー","いんよう","えー", "びー",  "しー", "でぃー", "いー","えふ",  "じー", "えいち",  "あい","じぇい",  "けい",  "える","えむ","えぬ","おー","ぴー","きゅー", "あーる", "えす","てぃー" ,"ゆー","ぶい", "だぶりゅー","えっくす","わい","ぜっと","みぎだいかっこ","たてぼう","ひだりだいかっこ","てん","さくじょ" ]
   ##  !"#$%&'()*+,-./=> 32..47
@@ -678,9 +679,9 @@ def kanayomi(pass)
   return res
 end 
 
-#-
+#
 # convert second to day, hour,min,sec string 
-#++
+#
 def dhms(sec)
   d = sec / (60 * 60 * 24)
   t = sec - (d * 60 * 60 * 24)
@@ -691,9 +692,9 @@ def dhms(sec)
   return sprintf("%02d:%02d:%02d:%02d", d,h,m,s)
 end
 
-#-
+#
 # Check the string is valid email address
-#++
+#
 def valid_email_address?(str)
 	ans = false
         if str =~ /[\*\\\?]/ then 

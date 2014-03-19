@@ -1,4 +1,5 @@
 #!/usr/local/bin/ruby 
+
 # encoding : utf-8 
 require 'optparse'
 require './popchecks.rb'
@@ -6,6 +7,7 @@ require './ldaputil.rb'
 require 'mail'
 require 'nkf'
 require 'logger'
+require 'tracer' 
 
 # handled by smtp.ray.co.jp 
 # $tdomain = [ "ray.co.jp", "plays.co.jp", "digisite.co.jp" ]
@@ -24,11 +26,15 @@ $gp = Array.new
 $adm = Array.new 
 $mailtest = true # do email test is default 
 $csv = false
+$csvt = false
 $supress = false 
 passwd = "" 
 name = "" 
-deb = false 
-puts "e-mail , shain # " 
+deb = false
+$ln = false
+$an = false 
+$resend = false
+
 opt.on('-c VAL', 'cc: address to send report mail') {|v| $cc.push(v) }
 opt.on('-t VAL', 'to: address to send report mail') {|v| $to.push(v) }
 opt.on('-g VAL', 'group address belonged. ') {|v| $gp.push(v) }
@@ -44,6 +50,8 @@ opt.on('-r', 're-send setting information(s).') { $resend = true }
 opt.on('-x', 'do not execute test') { $mailtest = false } 
 opt.on('-y', 'output report as csv file') { $csv = true } 
 opt.on('-s', 'supress email information') { $supress = true } 
+opt.on('-u', 'output title line of csv') { $csvt = true } 
+
 rr = opt.parse!(ARGV)
 begin  
   p ARGV
@@ -55,8 +63,8 @@ begin
 end if deb 
 $account = ARGV[0] 
 if $account == nil || $account.length ==0 then 
-  STDERR.puts "Acconut is invalid.(#{$account})" if deb 
-  exit -1
+  STDERR.puts "Acconut is invalid.(#{$account})" 
+  exit(-1)
 end
 $shain = ARGV[1]
 if ((deb == true) ||( $resend == true )) then 
@@ -70,8 +78,9 @@ p bb if deb
 if bb == nil then  # check if email is valid
   p bb if deb
   puts "#{$account} is invalid." if deb
-  exit -1
-end 
+  exit(-1)
+end
+
 if bb.size == 1 then
   $uid = $account
   $uid0 = $uid 
@@ -92,10 +101,10 @@ elsif $udomain.index(bb[1]) then
   $uid0 = $uid 
   $domain = bb[1]
   $ldap = "wm2.ray.co.jp" 
-else 
+else
   STDERR.puts "Domain #{bb[1]} is not supported."
-  STDERR.puts "uid = #{bb[0]}" 
-  exit -1
+  STDERR.puts "uid = #{bb[0]}"
+  exit(-1)
 end 
 
 def get_last_line(file_path)
@@ -121,21 +130,22 @@ end
     email = $account 
     $uid = email 
   end 
-  
-  puts "Domain #{$domain}"
-  puts "uid = #{$uid}" 
-  puts "email = #{email}"
-  puts "password = #{passwd}"
+  begin  
+    puts "Domain #{$domain}"
+    puts "uid = #{$uid}" 
+    puts "email = #{email}"
+    puts "password = #{passwd}"
+  end if deb
   if (passwd == "" ) then 
     if (passwd = getpass(email )) == true then 
-      puts "Cannot get password.#{email} "
-      exit -1
+      STDERR.puts "Cannot get password.#{email} "
+      exit(-1)
     end
   end
   if (name == "") then 
     if (name = getname(email)) == true then 
-      puts "Cannot get name."
-      exit -1
+      STDERR.puts "Cannot get name."
+      exit(-1)
     else 
       gname = getgname(email) 
     end
@@ -147,8 +157,8 @@ end
     end 
   end 
   if $shain.length < 4 then  
-    puts "Need shain number..."
-    exit -1 
+    STDERR.puts "Need shain number..."
+    exit(-1) 
   end 
   if $logpath then 
     log = Logger.new($logpath)
@@ -157,8 +167,8 @@ end
   end 
   popsrv = $host
   smtpsrv = $host
-  if (($mailtest == true) || ($supress == true)) then # do mail test 
-    puts "popcheck uid #{$uid}, #{popsrv}, #{passwd}" 
+  if (($mailtest == true) || ($supress == false)) then # do mail test 
+    puts "popcheck uid #{$uid}, #{popsrv}, #{passwd}" if deb 
     res = popcheck($uid , popsrv, passwd, deb )
     if res then
       fail += 1  
@@ -188,10 +198,10 @@ end
       end
     else 
       ## pass spam filter test 
-      puts "Spam filter test is skipped." 
+      puts "Spam filter test is skipped." if deb 
     end 
   ## check smtp auth  
-    puts "$uid: #{$uid}, $uid0: #{$uid0} $domain: #{$domain}" 
+    puts "$uid: #{$uid}, $uid0: #{$uid0} $domain: #{$domain}" if deb 
     res = smtpcheck( $uid , smtpsrv, passwd , 'ken7wiz@ybb.ne.jp' , 'a', deb, $domain )
     if res then 
       fail += 1 
@@ -201,11 +211,9 @@ end
       report.push  "AUTH送信テスト成功.#{Time.now}"
     end
   end 
-  p report
   $slist = Array.new  
   $clist = Array.new
   $tlist = Array.new 
-
   if !$supress then  
     $slist.push("e-mail")
   end 
@@ -228,7 +236,7 @@ end
     pass=4
   end 
   $sl = $slist.join("、")
-  puts "pass:#{pass}, fail:#{fail}" 
+  puts "pass:#{pass}, fail:#{fail}" if deb 
   if (fail > 0)  then 
     $toaddr = 'ken@ray.co.jp'
     $ccaddr = '' 
@@ -303,8 +311,8 @@ end
     $tlist.push("メールID")
     $tlist.push("メールパスワード")
     $tlist.push("パスワード読み")
-
-    $clist.push(name)
+    
+    $clist.push(name.chomp)
     $clist.push(email)
     $clist.push($uid)
     $clist.push(passwd)
@@ -330,109 +338,111 @@ end
     bend = 8
     if $adm.size > 0 then 
       $adm.each do |addr|
-      body.push = "e-mail:#{addr}" 
-      body.push = "" 
-      bend += 2
-    end
-  end 
-  if $resend == true then 
-    body.push  "" 
-    body.push  "" 
-    bend += 2 
-  else 
-    body.push  "------------------------アカウントテスト結果-------------------------\n"
-    bend += 1 
-  end 
-                  
-  $mess1 = body.join("\n")
-  if $resend != true then 
-    $mess1 += report.join("\n")+ "\n"+ "-"*70 + "\n"
-  end 
-
-  if $intra then 
-    `scp root@intra.ray.co.jp:~/pass.txt .` 
-    intr  = Array.new 
-    intr[0] = "イントラログインID:#{$shain}"
-    intr[1] = "イントラ初期パスワード:#{passwd}"
-    intr[2] = "(#{passread})" 
-    # csv section
-    $tlist.push("イントラログインID")
-    $tlist.push("イントラ初期パスワード")
-    $tlist.push("イントラパスワード読み") 
-    $clist.push($shain)
-    $clist.push(passwd)
-    $clist.push(passread)
-   
-    ps = get_last_line("pass.txt")
-    
-    intr[3] = "今月の会社ID:#{ps}"
-    intr[4] = "http://intra.ray.co.jp/ " 
-    $mess1 += intr.join("\n") + "\n"+ "-"*70 + "\n"
-  end 
-  if $jn then 
-
-    jb = Array.new 
-    jb[0] = "JobnetログインID:#{$shain}"
-    jb[1] = "Jobnet初期パスワード:#{passwd}"
-    jb[2] = "(#{passread})"
-    # csv 
-    $tlist.push("JobnetログインID")
-    $tlist.push("Jobnet初期パスワード")
-    $tlist.push("Jobnetパスワード読み") 
-    $clist.push($shain)
-    $clist.push(passwd)
-    $clist.push(passread)
-  
-    jb[4] = "http://jobnet.ray.co.jp/rj/ " 
-    $mess1 += jb.join("\n") + "\n"+ "-"*70 + "\n"
-  end
-  if $ln then 
-    lng = Array.new
-    lng[0] = "稟議ネットログインID:#{$shain}"
-    lng[1] = "稟議ネット初期パスワード:#{passwd}"
-    lng[2] = "(#{passread})" 
-    lng[3] = "http://linguinet.ray.co.jp/xpoint/login.jsp?domCd=RAY" 
-    # csv 
-    $tlist.push("稟議ネットログインID")
-    #tliat.push("稟議ネット初期パスワード")
-    $tlist.push("稟議ネットパスワード読み") 
-    $clist.push($shain) 
-    $clist.push(passwd)
-    $clist.push(passread)
-    $mess1 += lng.join("\n") + "\n"+ "-"*70 + "\n"
-  end 
-  if $an then 
-    anp = Array.new
-    anp[0] = "安否確認システム企業コード:4317"
-    anp[1] = "安否確認システムユーザーID:#{$shain}"
-    anp[2] = "安否確認システム初期パスワード:4317"
-    anp[3] = "https://www.e-kakushin.com/login/" 
-    # csv 
-    $tlist.push( "安否確認システム企業コード")
-    $tlist.push( "安否確認システムユーザーID")
-    $tlist.push( "安否確認システム初期パスワード")
-    $clist.push("4317")
-    $clist.push($shain)
-    $clist.push("4317")
-
-    $mess1 += anp.join("\n")+ "\n"+ "-"*70 + "\n"
-  end 
-  if $csv then 
-    puts $tlist.join(',')
-    puts $clist.join(',')
-  else  
-    puts "sending report via email......" 
-    mail.body  =  NKF.nkf('-Wj', $mess1).force_encoding("ASCII-8BIT")
-    mail.subject = NKF.nkf('-WMm0j', $subj).force_encoding("ASCII-8BIT")
-    begin 
-      if deb then 
-        puts mail.body
-        mail.deliver 
-      else 
-        mail.deliver 
+        body.push = "e-mail:#{addr}" 
+        body.push = "" 
+        bend += 2
       end
-    rescue => ex
-      p ex
+    end
+    if $resend == true then 
+      body.push  "" 
+      body.push  "" 
+      bend += 2 
+    else 
+      body.push  "------------------------アカウントテスト結果-------------------------\n"
+      bend += 1 
     end 
+                  
+    $mess1 = body.join("\n")
+    if $resend != true then 
+      $mess1 += report.join("\n")+ "\n"+ "-"*70 + "\n"
+    end 
+
+    if $intra then 
+      `scp root@intra.ray.co.jp:~/pass.txt .` 
+      intr  = Array.new 
+      intr[0] = "イントラログインID:#{$shain}"
+      intr[1] = "イントラ初期パスワード:#{passwd}"
+      intr[2] = "(#{passread})" 
+      # csv section
+      $tlist.push("イントラログインID")
+      $tlist.push("イントラ初期パスワード")
+      $tlist.push("イントラパスワード読み") 
+      $clist.push($shain)
+      $clist.push(passwd)
+      $clist.push(passread)
+   
+      ps = get_last_line("pass.txt")
+    
+      intr[3] = "今月の会社ID:#{ps}"
+      intr[4] = "http://intra.ray.co.jp/ " 
+      $mess1 += intr.join("\n") + "\n"+ "-"*70 + "\n"
+    end 
+    if $jn then 
+
+      jb = Array.new 
+      jb[0] = "JobnetログインID:#{$shain}"
+      jb[1] = "Jobnet初期パスワード:#{passwd}"
+      jb[2] = "(#{passread})"
+      # csv 
+      $tlist.push("JobnetログインID")
+      $tlist.push("Jobnet初期パスワード")
+      $tlist.push("Jobnetパスワード読み") 
+      $clist.push($shain)
+      $clist.push(passwd)
+      $clist.push(passread)
+  
+      jb[4] = "http://jobnet.ray.co.jp/rj/ " 
+      $mess1 += jb.join("\n") + "\n"+ "-"*70 + "\n"
+    end
+    if $ln then 
+      lng = Array.new
+      lng[0] = "稟議ネットログインID:#{$shain}"
+      lng[1] = "稟議ネット初期パスワード:#{passwd}"
+      lng[2] = "(#{passread})" 
+      lng[3] = "http://linguinet.ray.co.jp/xpoint/login.jsp?domCd=RAY" 
+      # csv 
+      $tlist.push("稟議ネットログインID")
+      #tliat.push("稟議ネット初期パスワード")
+      $tlist.push("稟議ネットパスワード読み") 
+      $clist.push($shain) 
+      $clist.push(passwd)
+      $clist.push(passread)
+      $mess1 += lng.join("\n") + "\n"+ "-"*70 + "\n"
+    end 
+    if $an then 
+      anp = Array.new
+      anp[0] = "安否確認システム企業コード:4317"
+      anp[1] = "安否確認システムユーザーID:#{$shain}"
+      anp[2] = "安否確認システム初期パスワード:4317"
+      anp[3] = "https://www.e-kakushin.com/login/" 
+      # csv 
+      $tlist.push( "安否確認システム企業コード")
+      $tlist.push( "安否確認システムユーザーID")
+      $tlist.push( "安否確認システム初期パスワード")
+      $clist.push("4317")
+      $clist.push($shain)
+      $clist.push("4317")
+
+      $mess1 += anp.join("\n")+ "\n"+ "-"*70 + "\n"
+    end 
+    if $csv then
+      if $csvt then  
+        puts $tlist.join(',')
+      end 
+      puts $clist.join(',')
+    else  
+      STDERR.puts "sending report via email......" 
+      mail.body  =  NKF.nkf('-Wj', $mess1).force_encoding("ASCII-8BIT")
+      mail.subject = NKF.nkf('-WMm0j', $subj).force_encoding("ASCII-8BIT")
+      begin 
+        if deb then 
+          puts mail.body
+          mail.deliver 
+        else 
+          mail.deliver 
+        end
+      rescue => ex
+        p ex
+      end 
+    end
   end
-end  
