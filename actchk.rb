@@ -260,7 +260,8 @@ end
 
     mail = Mail.new
     mail.charset = 'ISO-2022-JP' 
-    mail.from = 'ken@ray.co.jp'
+#    mail.from = 'ken@ray.co.jp'
+    mail.from = 'noreply@ray.co.jp'
     if deb then 
       mail.to = 'ken@ray.co.jp' 
     else 
