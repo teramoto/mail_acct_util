@@ -12,6 +12,9 @@ require 'romaji'
 #
 # Decide path for log file.
 # 
+GLOGPATH = '/var/log'
+LLOGPATH = 'log'
+LOGFILE = 'ldap.log' 
 begin 
   fp = File.open('/var/log/ldap.log','a+')
 rescue 
@@ -22,9 +25,25 @@ end
 if $logpath == nil then 
   begin 
     fp = File.open('log/ldap.log','a+')
+    $logpath = 'log/ldap.log'
   rescue => ex
     STDERR.puts  ex  
     STDERR.puts "can't open log file"
+    begin 
+      if File::ftype('log') == 'directory' then 
+        $logpath= 'log/ldap.log'
+      end
+    rescue => ex1 
+      STDERR.puts ex1
+      begin 
+        Dir::mkdir('log') 
+        $logpath = 'log/ldap.log'
+      rescue => ex2  
+        STDERR.puts ex2 
+        $logpath = nil
+      end 
+    end  
+    retry   
   else 
     if fp != nil then 
       $logpath= 'log/ldap.log'
