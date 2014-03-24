@@ -1,12 +1,13 @@
 #!/usr/local/bin/ruby
 
-require './ldaputil.rb'
+# require './ldaputil.rb'
 
-def ldaplist(domain, ldaphost,nth)
+def ldaplist(domain, ldaphost, nth)
   if (domain == nil || ldaphost== nil) then
     STDERR.puts "Bad parameters," if $deb
     return nil
   end
+  nth = nth.to_i
   if nth < 0 then 
     retrun nil 
   end 
@@ -31,18 +32,19 @@ def ldaplist(domain, ldaphost,nth)
 #        p  entry if $deb
         num += 1
         if (nth == 0) ||(num == nth) then  
-          str1 = Array.new
+          str1 = Hash.new
           puts "-->#{num}data."  if $deb
           entry.each do |attribute,values|
             puts( "#{attribute}:") if $deb 
-            str2 = Array.new 
-            str2.push(attribute.to_s)  
+#            str2 = Array.new 
+#            str2.push(attribute) # .to_s)  
             values.each do |value|
-              str2.push(value) #  += "," 
+              str1.store(attribute, value)
+#              str2.push(value) #  += "," 
               # str2 += value.to_s 
             end
-            puts str2.size if $deb 
-            str1.push(str2) 
+#            puts str2.size if $deb 
+#            str1.push(str2) 
           end
           if (nth != 0) then
             return str1
