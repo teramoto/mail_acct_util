@@ -434,7 +434,7 @@ def getfwd(addr, ldap)
   end 
 #end
 #
-# DN エントリーのすべてのデータを表示知する。
+# DN エントリーのすべてのデータを表示する。
 # 
 def ldapdisplay(treebase, id, value)
   if (treebase== nil) || (id == nil) || (value== nil)then 
