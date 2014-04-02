@@ -27,7 +27,7 @@ def smtpcheck(user, server, passwd, to_addr, comm, debug , domain)
       smtp.rcptto(to_addr)
     rescue => exsm
        stat = 1
-       puts exsm 
+       STDERR.puts exsm 
        ret = true 
     end 
     if stat == 1 then 
@@ -46,7 +46,7 @@ def smtpcheck(user, server, passwd, to_addr, comm, debug , domain)
       smtp.send_message  'Test Message', 'ken@ray.co.jp', to_addr 
     rescue => exsm
        stat = 1
-       puts exsm 
+       STDERR.puts exsm 
        ret = true 
     end 
     if stat == 1 then 
@@ -80,7 +80,7 @@ def smtpcheck(user, server, passwd, to_addr, comm, debug , domain)
        puts "Send Error" if debug 
        ret = true 
     else 
-       puts "send mail succeed."
+       STDERR.puts "send mail succeed."
        ret = false
     end
   end 
@@ -138,10 +138,10 @@ $DEBUG = nil
 #exit
 #.divmod(24*60*60)
 
-puts "#{ARGV.size} args "  
+STDERR.puts "#{ARGV.size} args "  
 if ARGV.size< 3 then 
-   puts "need user, server, passwd"
-   exit
+   STDERR.puts "need user, server, passwd"
+   exit(-1)
 end
 $argc = 0 
 $comm = 'p' 
@@ -170,7 +170,7 @@ $comm = 'p'
       $to_addr = dd
       $argc += 1 
     else 
-      puts "Parameter Error!#{dd}:#{$argc}" 
+      STDERR.puts "Parameter Error!#{dd}:#{$argc}" 
       exit -1
     end 
   end
