@@ -19,6 +19,7 @@ traddr = Array.new
 # puts ARGV[0] ,ARGV[1], ARGV[2]
 rr = opt.parse!(ARGV)
 puts ARGV.size 
+modad2 = Array.new 
 p ARGV 
 case ARGV.size 
 when 0
@@ -36,6 +37,17 @@ when 3
   fwaddr = ARGV[0]
   modaddr = ARGV[1]
   cmd = ARGV[2]
+when 4..9999
+  fwaddr = ARGV[0]
+  modaddr = ARGV[1]
+  cmd = ARGV[2]
+  if cmd == "add" then 
+    3..ARGV.size do |i| 
+      if valid_email_address?(ARGV[i-1]) then 
+        modad2.push(ARGV[i-1])
+      end 
+    end
+  end
 else 
   STDERR.puts "At least need forward address." 
 end 

@@ -1,8 +1,11 @@
 #!/usr/local/bin/ruby
 
-
+fn = 'tt.txt' 
+if ARGV[0] != nil then 
+  fn = ARGV[0]
+end 
 lnum = 0 
-File.open('tt.txt') do |f|
+File.open(fn) do |f|
   f.each do |line|
    # p line
     l1 = line.chomp

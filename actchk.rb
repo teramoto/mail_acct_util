@@ -295,11 +295,16 @@ end
     else 
       body.push("ITシステム設定が完了致しましたのでご連絡致します。")
       body.push("設定項目：#{$slist}")
+    end
+    begin  
+      nm = "名前:#{name}"
+      if ((gname != nil) && (gname.length > 0)) then 
+        nm += " (#{gname})" 
+      end 
+    rescue => ex 
+      p ex
     end 
-    nm = "名前:#{name}"
-    if ((gname != nil) && (gname.length > 0)) then 
-      nm += " (#{gname})" 
-    end 
+
     body.push(nm)
     body.push("e-mail:#{email}")
     body.push("メールID:#{$uid}")
@@ -420,9 +425,9 @@ end
       $tlist.push( "安否確認システム企業コード")
       $tlist.push( "安否確認システムユーザーID")
       $tlist.push( "安否確認システム初期パスワード")
-      $clist.push("4317")
-      $clist.push($shain)
-      $clist.push("4317")
+      $clist.push("4317").force_encoding("utf-8")
+      $clist.push($shain).force_encoding("utf-8")
+      $clist.push("4317").force_encoding("utf-8")
 
       $mess1 += anp.join("\n")+ "\n"+ "-"*70 + "\n"
     end 

@@ -165,12 +165,18 @@ if Moji.type($name) == Moji::HAN_KATA  then
   puts Moji.type($name) if $DEBUG
   puts $name if $DEBUG 
 end
-
+if Moji.type($name) == Moji::ZEN_KATA then 
+  $name = Moji.kata_to_hira($name)
+end 
 if Moji.type($f_name) == Moji::HAN_KATA  then 
   $f_name = Moji.han_to_zen($f_name)
+  $f_name = Moji.kata_to_hira($f_name)
   puts Moji.type($f_name) if $DEBUG
   puts $f_name if $DEBUG
 end
+if Moji.type($f_name) == Moji::ZEN_KATA then 
+  $f_name = Moji.kata_to_hira($f_name)
+end 
 
 ecnt = 0 
 if (($mail == nil) || ($mail =="")) then 
@@ -429,7 +435,7 @@ if ($mode == 1) && $mailok then
   File.write( "./ldifbackup/" +$mail,$ldif) 
 ## print dnet csv
   $dnet = sprintf ("0,0,")
-  $dnet += sprintf("#{$sei}　#{$mei},#{$f_name}　#{$name},#{$shain},#{$passwd},#{$mail}@#{$domain},,,,,,,,,,,,,,,,,,rg1099," )
+  $dnet += sprintf("#{$sei}　#{$mei},#{$f_name}　#{$name},#{$shain},#{$passwd},#{$mail},,,,,,,,,,,,,,,,,,rg1099," )
 
   File.write( "./dnetbackup/" +$mail+".csv",$dnet) 
   ## add entry to ldap 
