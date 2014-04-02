@@ -230,7 +230,9 @@ end
   $tlist = Array.new 
   if !$supress then  
     $slist.push(("e-mail").force_encoding('UTF-8')) 
-  end 
+  end
+  # adjust encoding.. etc 
+  email = (email.encode('utf-8')) 
   ## additional e-mail ??
 
   if $intra then 
@@ -314,12 +316,13 @@ end
       nm = "名前:#{name}"
       if ((gname != nil) && (gname.length > 0)) then 
         nm += " (#{gname})" 
-      end 
+      end
+      nm = nm.force_encoding('utf-8')  
     rescue => ex 
       p ex
     end 
-
-    body.push(nm)
+    name1 = "名前:" + (name.chomp).force_encoding('utf-8') 
+    body.push(name1)
     body.push("e-mail:#{email}")
     body.push("メールID:#{$uid}")
     body.push("メールPass:#{passwd}")
@@ -333,8 +336,8 @@ end
     $tlist.push("パスワード読み")
     
     $clist.push((name.chomp).force_encoding('UTF-8'))
-    $clist.push((email).force_encoding('UTF-8'))
-    $clist.push(($uid).force_encoding('UTF-8'))
+    $clist.push((email)) 
+    $clist.push(($uid).encode('UTF-8'))
     $clist.push((passwd).force_encoding('UTF-8'))
     $clist.push(passread)
 

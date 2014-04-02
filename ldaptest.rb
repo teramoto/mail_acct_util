@@ -5,6 +5,10 @@ require 'cgi'
 require './ldaputil1.rb'
 
 puts ARGV[0] 
+puts getname(ARGV[0])
+puts getgname(ARGV[0])
+exit 0
+
 bb = ARGV[0].split('@')
 if $tdomain.index(bb[1]) then 
   ldap = 'ldap.ray.co.jp' 
