@@ -15,61 +15,86 @@ require 'romaji'
 GLOGPATH = '/var/log'
 LLOGPATH = 'log'
 LOGFILE = 'ldap.log' 
-begin 
-  fp = File.open('/var/log/ldap.log','a+')
-rescue 
-  $logpath = nil
-else 
-  $logpath = '/var/log/ldap.log'
-end 
-if $logpath == nil then 
-  begin 
-    fp = File.open('log/ldap.log','a+')
-    $logpath = 'log/ldap.log'
-  rescue => ex
-    STDERR.puts  ex  
-    STDERR.puts "can't open log file"
+def logpathset
+  if $logpath == nil then 
     begin 
-      if File::ftype('log') == 'directory' then 
-        $logpath= 'log/ldap.log'
-      end
-    rescue => ex1 
-      STDERR.puts ex1
+      fp = File.open('/var/log/ldap.log','a+')
+    rescue 
+      $logpath = nil
+    else 
+      $logpath = '/var/log/ldap.log'
+    end 
+    if $logpath == nil then 
       begin 
-        Dir::mkdir('log') 
+        fp = File.open('log/ldap.log','a+')
         $logpath = 'log/ldap.log'
-      rescue => ex2  
-        STDERR.puts ex2 
-        $logpath = nil
-      end 
-    end  
-    retry   
-  else 
-    if fp != nil then 
-      $logpath= 'log/ldap.log'
+      rescue => ex
+        STDERR.puts  ex  
+        STDERR.puts "can't open log file"
+        begin 
+          if File::ftype('log') == 'directory' then 
+            $logpath= 'log/ldap.log'
+          end
+        rescue => ex1 
+          STDERR.puts ex1
+          begin 
+            Dir::mkdir('log') 
+            $logpath = 'log/ldap.log'
+          rescue => ex2  
+            STDERR.puts ex2 
+            $logpath = nil
+          end 
+        end  
+        retry   
+      else 
+        if fp != nil then 
+          $logpath= 'log/ldap.log'
+        end
+      end
     end
-  end
-end 
-begin 
-  fp = File.open('/var/log/ldapop.log','a+')
-rescue
-  $logpathop = nil
-else
-  $logpathop = '/var/log/ldapop.log'
+  end 
+  if $logpathop == nil then 
+    begin 
+      fp = File.open('/var/log/ldapop.log','a+')
+    rescue
+      $logpathop = nil
+    else
+      $logpathop = '/var/log/ldapop.log'
+    end
+    if $logpathop == nil then
+      begin 
+        fp = File.open('log/ldapop.log','a+')
+      rescue => ex 
+        STDERR.puts ex 
+        STDERR.puts"can't open operation log file"
+        $logpathop == nil
+      else 
+        if fp != nil then 
+          $logpathop= 'log/ldapop.log'
+        end  
+      end
+    end 
+  end 
 end
-if $logpathop == nil then
-  begin 
-    fp = File.open('log/ldapop.log','a+')
-  rescue => ex 
-    STDERR.puts ex 
-    STDERR.puts"can't open operation log file"
-    $logpathop == nil
-  else 
-    if fp != nil then 
-      $logpathop= 'log/ldapop.log'
-    end  
+ 
+def logopen 
+  logpathset 
+  if $logpath then 
+    log = Logger.new($logpath)
+    log.level = Logger::WARN
   end
+  return log 
 end 
+
+def logopenop
+  logpathset
+  if $logpathop then 
+    log = Logger.new($logpathop)
+    log.level = Logger::WARN 
+  end 
+  return log
+end 
+
 #
 # global arrays for domains handled 
 # 
@@ -257,10 +282,7 @@ end
 # return value for specific attribute. 
 #
 def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
-  if $logpath then 
-    log = Logger.new($logpath)
-    log.level = Logger::WARN
-  end 
+  logopen 
   if ldap == "ldap.ray.co.jp" then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
@@ -509,6 +531,49 @@ def ldapdel(dn,host)
 end
 
 #
+# Replace attribute of ldap record.... 
+# 
+def ldaprplattr(dn, uid, attr, value, ldaphost ) 
+
+  log = logopen
+  oplog = logopenop
+  case ldaphost
+  when 'ldap.ray.co.jp' 
+    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
+    treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
+  when 'wm2.ray.co.jp'
+    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
+    treebase = "ou=Mail,dc=ray,dc=jp"
+  end 
+  hits =0
+  result = "not executed"
+  STDERR.puts dn if $deb 
+  Net::LDAP.open(:host => ldaphost, :port => 389 , :auth => auth  ) do |ldap|
+    STDERR.puts("ldap opend sucessfully") if $deb 
+
+  #  ,:encryption => :simple_tls # ldap.port = 389 636
+    filter = Net::LDAP::Filter.eq('uid', uid)
+#  p filter
+    $resdn = ""
+    ldap.search(:base => treebase, :filter => filter  ) do |entry|
+      p entry 
+#      STDERR.puts("entry found sucessfully") if $deb 
+#      if entry.size > 1 then
+#        log.warn("ldaprplattr: entry size =#{entry.size}") if $logpath 
+#        STDERR.puts("ldaprplattr: entry size =#{entry.size}") if $deb 
+#      end
+      $resdn = entry.dn
+    end
+    p $resdn 
+    puts $resdn 
+    puts "#{attr} => #{value}" 
+    result = ldap.replace_attribute($resdn, attr, value)
+    return result 
+  end
+  oplog.warn("ldaprplattr :DN: #{$resdn}: #{attr} : #{value} ") if $logpathop
+end
+
+#
 # Add attribute.... 
 # 
 def addattr(uid, attr, value) 
@@ -537,7 +602,7 @@ def addattr(uid, attr, value)
       $resdn = entry.dn
     end
 
-    result = ldap.replace_attribute($resdn, attr, value)
+    result = ldap.add_attribute($resdn, attr, value)
     return result 
   end
   oplog.warn("addattr :DN: #{$resdn}: #{attr} : #{value} ") if $logpathop

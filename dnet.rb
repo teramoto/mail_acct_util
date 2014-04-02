@@ -1,6 +1,7 @@
 #!/usr/local/bin/ruby 
 
 require 'pg'
+require 'ldaputil' 
 
 # mail = ARGV[0] 
 
@@ -51,3 +52,5 @@ def dnetmailinfo(mail)
   end
   return res 
 end
+
+dnetmailinfo(ARGV[0]) 
