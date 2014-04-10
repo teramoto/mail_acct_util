@@ -37,7 +37,7 @@ $deb = false
 $ln = false
 $an = false 
 $resend = false
-
+$hmessage = "" 
 def prenc(ary)
   if $deb then 
     puts "#{ary.length} itens in array"  
@@ -53,6 +53,7 @@ opt.on('-c VAL', 'cc: address to send report mail') {|v| $cc.push(v) }
 opt.on('-t VAL', 'to: address to send report mail') {|v| $to.push(v) }
 opt.on('-g VAL', 'group address belonged. ') {|v| $gp.push(v) }
 opt.on('-m VAL', 'additional e-mail address') { |v| $adm.push(v) } 
+opt.on('-h VAL', 'heading message') { |v| $hmessage = v } 
 opt.on('-n VAL', 'supply name manually' ) { |v| name = v }
 opt.on('-p VAL', 'supply password manually') { |v| passwd = v } 
 opt.on('-d', '$debug mode ') { $deb = true }
@@ -304,6 +305,10 @@ end
       passread = "" 
     end 
     body = Array.new 
+    if $hmessage.length > 0 then 
+      body.push($hmessage)
+      body.push( '-' * 40) 
+    end 
     if $resend then 
       body.push( "ITシステムの設定情報をお知らせ致します。")
       $subj = "#{$sl}設定情報"
