@@ -1,6 +1,6 @@
 #!/usr/local/bin/ruby
 
-# require './ldaputil.rb'
+require './ldaputil.rb'
 
 def ldaplist(domain, ldaphost, nth)
   if (domain == nil || ldaphost== nil) then
@@ -12,7 +12,7 @@ def ldaplist(domain, ldaphost, nth)
     retrun nil 
   end 
   case ldaphost
-  when 'ldap.ray.co.jp'
+  when 'ldap.ray.co.jp','smtp3.ray.co.jp' 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => 'ray00' }
     treebase = 'ou=Mail,dc=ray,dc=co,dc=jp' 
   when 'wm2.ray.co.jp'
@@ -82,7 +82,8 @@ end
 numx = ARGV[0].to_i
  
 # p numx 
-res = ldaplist('ray.co.jp', 'ldap.ray.co.jp', numx )
+#res = ldaplist('ray.co.jp', 'ldap.ray.co.jp', numx )
+res = ldaplist('ray.co.jp', 'smtp3.ray.co.jp', numx )
 if res == -1 then 
   puts "number error! "
 else 

@@ -10,6 +10,34 @@ require 'tracer'
 require 'romaji'
 require 'moji' 
 
+def sjis_safe(str)
+  if str == nil then
+    return nil
+  end
+  [
+    ["301C", "FF5E"], # wave-dash
+    ["2212", "FF0D"], # full-width minus
+    ["00A2", "FFE0"], # cent as currency
+    ["00A3", "FFE1"], # lb(pound) as currency
+    ["00AC", "FFE2"], # not in boolean algebra
+    ["2014", "2015"], # hyphen
+    ["2016", "2225"], # double vertical lines
+  ].inject(str) do |s, (before, after)|
+    s.gsub(
+      before.to_i(16).chr('UTF-8'),
+      after.to_i(16).chr('UTF-8'))
+  end
+end
+
+def sjis_conv(str)
+  ss = sjis_safe(str)
+  if ss == nil then
+    return nil
+  else
+    return str.encode('Shift_JIS')
+  end
+end
+
 # check and create 
 # todo 
 # check local part for @ray.co.jp and @ss.ray.co.jp 
@@ -46,6 +74,8 @@ def exit_finish
           $cgi.br +
           $cgi.submit
         end +
+        $cgi.a("bizmail_basic/#{$bfile1}") { "BizMail Basic Information" } +
+        $cgi.a("bizmail_ext/#{$bfile2}") { "BizMail Extend Information"  } +
         $cgi.pre() do
           CGI.escapeHTML(
             "params: " + $cgi.params.inspect + "\n" +
@@ -408,7 +438,8 @@ if ($mode == 1) && $mailok then
      :wifiuid => $mail ,
      :accountActive => "TRUE",
      :domainName => $domain,  
-     :transport => 'virtual'
+#    :transport => 'virtual'
+     :transport => 'smtp:[vcgw1.ocn.ad.jp]'
     }
   end 
 #  p attr 
@@ -431,14 +462,36 @@ if ($mode == 1) && $mailok then
   end
   $ldif += sprintf "accountActive: TRUE\n"
   $ldif += sprintf "domainName: #{$domain}\n"   
-  $ldif += sprintf "transport: virtual\n"
+  if $host == 'wm2.ray.co.jp' then 
+    $ldif += sprintf "transport: virtual\n"
+  else 
+    $ldif += sprintf "transport: smtp:[vcgw1.ocn.ad.jp]\n"
+  end 
   File.write( "./ldifbackup/" +$mail,$ldif) 
 ## print dnet csv
   $dnet = sprintf ("0,0,")
   $dnet += sprintf("#{$sei}　#{$mei},#{$f_name}　#{$name},#{$shain},#{$passwd},#{$mail},,,,,,,,,,,,,,,,,,rg1099," )
-
   File.write( "./dnetbackup/" +$mail+".csv",$dnet) 
-  ## add entry to ldap 
+  ## output file for biz mail 
+
+#  Biz mail 一括登録基本情報
+#  email, グループ名、姓、姓（ふりがな）、名、名（ふりがな）、パスワード、アカウントステータス(0),管理者権限(0)
+  
+  bas = "#{$mail},ユーザー,#{$sei},#{$f_name},#{$mei},#{$name},#{$passwd},0,0\n"
+#  p bas  
+  bas_s = sjis_conv(bas)
+  $bfile1 = $mail + ".csv" 
+  File.write("./bizmail_basic/" + $bfile1 , bas_s)
+  #       mail    ,  group,  sn,  shain ,    cn ,   desc          pass           
+# アカウント詳細情報（変更）
+# email, 表示名、Middle,global連動(0), PW変更(0), 説明、備考、郵便番号、都道府県、市町村、住所、国、会社、会社（フリガナ）、役職、電話番号、自宅電話、携帯、ポケットベル、FAX、メールをHTMLで表示(0)、HTHMLメールに外部イメージを表示(0)、新着メール通知アドレスを有効に(0)、新着通知メールアドレス、自動返信メッセージ有効、メール送信許可アドレス１、メール送信許可アドレス２、メール送信許可アドレス３、設定不要、設定不要、転送設定有効、作成メール形式(0:text,1:html)、UIテーマ、メッセ維持のコピーをBOXに残さない、IMAP有効(1),IMAP検索フォルダを表示(0), TZ077,5,0,0,0  
+# 1- 41  
+  ext = "#{$mail},#{$sei}　#{$mei},,0,0,,#{$shain},,,,,,,,,,,,,,1,1,0,,0,,,,,,0,1,beach,0,1,0,TZ077,5,0,0,0\n" 
+  ext_s = sjis_conv(ext) 
+  $bfile2 = $mail + "_ext.csv" 
+  File.write("./bizmail_ext/" + $mail + $bfile2 , ext_s)
+## bizmail end
+## add entry to ldap
   Net::LDAP.open(:host => $host ,:port => 389 , :auth => $auth  ) do |ldap|
     #  ,:encryption => :simple_tls # ldap.port = 389 636
     #    p filter
@@ -452,4 +505,4 @@ if ($mode == 1) && $mailok then
 else 
   exit_job
   exit 
-end  
+end 

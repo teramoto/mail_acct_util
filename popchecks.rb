@@ -16,11 +16,16 @@ def smtpcheck(user, server, passwd, to_addr, comm, debug , domain)
   log.level= Logger::INFO
   ret = true
   stat = 0
+  if server == 'mail01.bizmail2.com' then 
+    port = 465
+  else 
+    port = 25
+  end 
   case comm
   when 'r' 
     puts "SMTP RCPT Check mode"  if debug 
     begin 
-      smtp = Net::SMTP.new(server, 25) 
+      smtp = Net::SMTP.new(server, port) 
       smtp.set_debug_output $stderr if debug
       smtp.start('smtp.ray.co.jp' )  
       smtp.mailfrom('ken@digisite.jp') 
