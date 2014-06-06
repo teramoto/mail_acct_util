@@ -99,7 +99,7 @@ end
 # global arrays for domains handled 
 # 
 #  handled by smtp.ray.co.jp
-$tdomain = [ "ray.co.jp", "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu", "tc-max.co.jp"  ]
+$tdomain = [ "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu", "tc-max.co.jp"  ]
 # handled by sakura server www16276uf.sakura.ne.jp
 $udomain = [ "ss.ray.co.jp" , "nissayseminar.jp", "nissayspeech.jp", "mcray.jp", "lic.prent.jp" ]
 $vdomain = [ "wes.co.jp" ]  # web areana 

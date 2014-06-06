@@ -74,8 +74,15 @@ def exit_finish
           $cgi.br +
           $cgi.submit
         end +
-        $cgi.a("bizmail_basic/#{$bfile1}") { "BizMail Basic Information" } +
-        $cgi.a("bizmail_ext/#{$bfile2}") { "BizMail Extend Information"  } +
+        $cgi.p do
+          $cgi.a("bizmail_basic/#{$bfile1}") { "BizMail Basic Information" }
+        end + 
+        $cgi.p do
+          $cgi.a("bizmail_ext/#{$bfile2}") { "BizMail Extend Information"  } 
+        end +
+        $cgi.p do  
+          $cgi.a("dnetbackup/#{$dnfile}") { "desknets accounr for import"  }
+        end +  
         $cgi.pre() do
           CGI.escapeHTML(
             "params: " + $cgi.params.inspect + "\n" +
@@ -471,7 +478,9 @@ if ($mode == 1) && $mailok then
 ## print dnet csv
   $dnet = sprintf ("0,0,")
   $dnet += sprintf("#{$sei}　#{$mei},#{$f_name}　#{$name},#{$shain},#{$passwd},#{$mail},,,,,,,,,,,,,,,,,,rg1099," )
-  File.write( "./dnetbackup/" +$mail+".csv",$dnet) 
+  $dnfile = $mail + "_dnet.csv" 
+  dnet_s = sjis_conv($dnet) 
+  File.write( "./dnetbackup/" +$dnfile, dnet_s ) 
   ## output file for biz mail 
 
 #  Biz mail 一括登録基本情報
@@ -489,7 +498,7 @@ if ($mode == 1) && $mailok then
   ext = "#{$mail},#{$sei}　#{$mei},,0,0,,#{$shain},,,,,,,,,,,,,,1,1,0,,0,,,,,,0,1,beach,0,1,0,TZ077,5,0,0,0\n" 
   ext_s = sjis_conv(ext) 
   $bfile2 = $mail + "_ext.csv" 
-  File.write("./bizmail_ext/" + $mail + $bfile2 , ext_s)
+  File.write("./bizmail_ext/" + $bfile2 , ext_s)
 ## bizmail end
 ## add entry to ldap
   Net::LDAP.open(:host => $host ,:port => 389 , :auth => $auth  ) do |ldap|

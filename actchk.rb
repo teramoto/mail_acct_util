@@ -100,8 +100,8 @@ if bb[1] == 'ray.co.jp'  then
   $uid = bb[0]
   $uid0 = $uid 
   $domain = "ray.co.jp" 
-#  $host = "smtp.ray.co.jp" 
-  $host = "mail01.bizmail2.com" 
+  $host = "smtp.ray.co.jp" 
+#  $host = "mail01.bizmail2.com" 
   $ldap = "ldap.ray.co.jp" 
 elsif $tdomain.index(bb[1]) then
   $uid = bb[0]
@@ -303,20 +303,6 @@ end
 
     # special fix 
     case email 
-    when 'h-kido@ray.co.jp' then 
-      passwd = 'z9JB3rus'
-    when 'h-kai@ray.co.jp' then 
-      passwd = 'u28tAcrV' 
-    when 'k-yamauchi@ray.co.jp' 
-      passwd = 'bcw39xHB'
-    when 'kuri@ray.co.jp' 
-      passwd = 'uzgBT36h'
-    when 'm-matsumoto@ray.co.jp' 
-      passwd = 't2Ur3nuQ' 
-    when 'mukaida@ray.co.jp' 
-      passwd = 's0Nxch9X' 
-    when 'saiyo@ray.co.jp' 
-      passwd = 'LjxG0ya7' 
     when 'yurie-okada@ray.co.jp' 
       passwd = 'c08QMged' 
     end 
