@@ -66,6 +66,7 @@ opt.on('-x', 'do not execute test') { $mailtest = false }
 opt.on('-y', 'output report as csv file') { $csv = true } 
 opt.on('-s', 'supress email information') { $supress = true } 
 opt.on('-u', 'output title line of csv') { $csvt = true } 
+opt.on('-x', 'do not mail admin') { $noadm = true } 
 
 rr = opt.parse!(ARGV)
 begin  
@@ -285,7 +286,11 @@ end
     else 
       mail.to = $toaddr 
       if $resend != true then 
-        mail.cc = $ccaddr + $adminaddr 
+        if ($noadm == nil || $noadm== false) then 
+          mail.cc = $ccaddr + $adminaddr 
+        else 
+          mail.cc = $ccaddr 
+        end
       else 
         mail.cc = $ccaddr 
       end 

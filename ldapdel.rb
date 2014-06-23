@@ -13,11 +13,16 @@ puts "address to delete"
 opt = OptionParser.new
 OPTS = {}
 Version = '0.1' 
-deb = false 
-opt.on('-d ', 'debug mode ') { deb = true }
+$deb = false 
+$ml = false 
+
+opt.on('-d', 'debug mode ') { $deb = true }
+opt.on('-m', 'mailing list mode ') { $ml = true }
 
 puts ARGV[0] ,ARGV[1], ARGV[2]
 rr = opt.parse!(ARGV)
+puts "$deb=#{$deb}, $ml=#{$ml}" 
+
 #puts getfwd ARGV[0]
 wid = ARGV[0].split('@')
 if wid == nil then 
@@ -37,9 +42,14 @@ email = ARGV[0]
 uid = wid[0]  
 domain = wid[1]
 ldap = getldap(email)
+puts "uid=#{uid}, email=#{email}" 
 case wid[1] #  domain part 
 when 'ray.co.jp'
-    ldapdel("uid=#{uid},ou=Mail,dc=ray,dc=co,dc=jp", ldap)
+    if ( $ml == true) then 
+      ldapdel("uid=#{email},ou=Mail,dc=ray,dc=co,dc=jp", ldap)
+    else 
+      ldapdel("uid=#{uid},ou=Mail,dc=ray,dc=co,dc=jp", ldap)
+    end 
 when 'ss.ray.co.jp' 
     ldapdel("uid=#{email},ou=Mail,dc=ray,dc=co,dc=jp", ldap)
 else

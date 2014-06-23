@@ -1,4 +1,4 @@
-#!/usr/local/bin/ruby
+#usr/local/bin/ruby
 # encoding : utf-8 
 
 require 'net/ldap'
@@ -99,9 +99,9 @@ end
 # global arrays for domains handled 
 # 
 #  handled by smtp.ray.co.jp
-$tdomain = [ "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu", "tc-max.co.jp"  ]
+$tdomain = [ "ray.co.jp", "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu", "tc-max.co.jp"  ]
 # handled by sakura server www16276uf.sakura.ne.jp
-$udomain = [ "ss.ray.co.jp" , "nissayseminar.jp", "nissayspeech.jp", "mcray.jp", "lic.prent.jp" ]
+$udomain = [ "ss.ray.co.jp" , "nissayseminar.jp", "nissayspeech.jp", "mcray.jp", "lic.prent.jp","nissay-miraifes.jp" ]
 $vdomain = [ "wes.co.jp" ]  # web areana 
 $wdomain = [ "tc-max.co.jp" ] 
 $cdomain = [ "ray.co.jp" , "digisite.co.jp", "plays.co.jp" ]
@@ -500,6 +500,7 @@ end
 # dn エントリーを削除
 # 
 def ldapdel(dn,host)
+  puts "dn = #{dn}" if $deb 
   if $logpath then 
     log = Logger.new($logpath)
     log.level = Logger::INFO
@@ -518,6 +519,7 @@ def ldapdel(dn,host)
   puts "dn = #{dn}" if $deb 
   begin
     Net::LDAP.open(:host => host ,:port => 389 , :auth => auth  ) do |ldap|
+      p ldap 
       result = ldap.delete :dn => dn 
       puts result 
       puts ldap.get_operation_result
@@ -527,7 +529,8 @@ def ldapdel(dn,host)
   rescue => ex
     log.fatal( ex) if $logpath 
     return true
-  end 
+  end
+  puts result  
 end
 
 #

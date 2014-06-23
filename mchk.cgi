@@ -43,7 +43,7 @@ end
 # check local part for @ray.co.jp and @ss.ray.co.jp 
 # $DEBUG = 9 
 def exit_job
-  
+#  $result += $force  
   if $mail && ($mail.index('@') == nil) then 
     begin 
       p $mail
@@ -57,7 +57,7 @@ def exit_job
 #      $mail += $domain
 #      puts "mail :#{$mail}" if $DEBUG  
 #    end   
-  redirect_url = 'mchk.rhtml' + '?' + "result=#{$result}&email=#{$mail}&domain=#{$domain}&shain=#{$shain}&passwd=#{$passwd}&mei=#{$mei}&sei=#{$sei}&name=#{$name}&f_name=#{$f_name}" 
+  redirect_url = 'mchk.rhtml' + '?' + "result=#{$resk}__#{$result}&email=#{$mail}&domain=#{$domain}&shain=#{$shain}&passwd=#{$passwd}&mei=#{$mei}&sei=#{$sei}&name=#{$name}&f_name=#{$f_name}" 
 
   ## $log.warn( cgi.header({ 'status' => 'REDIRECT', 'Location' => redirect_url} ))
   print $cgi.header({ 'status' => 'REDIRECT', 'Location' => redirect_url} )
@@ -106,6 +106,8 @@ $cgi = CGI.new("html4")
 
 # Tracer.on
 $domain = $cgi['domain']
+$force = $cgi.params['force'][0]  
+
 # puts "$domain #{$domain}" 
 
 if $cgi['debug'] ==""  then 
@@ -185,14 +187,17 @@ def getemail(sname, fname, shain)
   ff = Romaji.kana2romaji(fname)
   ss = Romaji.kana2romaji(sname)
   puts "#{ff}, #{ss}, #{shain}"  if $DEBUG  
-  snum = shain.to_i 
+  snum = shain.to_i
+  # 社員番号からドメインを決定 
   case snum
   when 0..9999 
     dom = 'ray.co.jp'
   else 
     dom = 'ss.ray.co.jp' 
-  end 
-  mail = ff[0] +"-"+  ss + "@" + dom 
+  end
+  # oo -> o 
+  mail_local = ss.sub( /oo/, "o")  
+  mail = ff[0]  +"-"+  mail_local + "@" + dom 
   puts mail  if $DEBUG
   return mail 
 end
@@ -283,7 +288,7 @@ end
 #p $mail.split("")
 #p $mail.index('y')
 # if /\@/  =~ $mail then  
-
+$resk = "" 
 # Check if given address is already taken? 
 def adrcheck(mail) 
   target = mail
@@ -297,8 +302,9 @@ def adrcheck(mail)
     return true  
   end 
   # decide parameters for each ldap server 
-  ldap = getldap(mail)
-  case ldap 
+  $ldap = getldap(mail)
+#  puts "<#{$ldap}>"  
+  case $ldap 
   when 'ldap.ray.co.jp' 
     $auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     $host = 'ldap.ray.co.jp'
@@ -308,7 +314,7 @@ def adrcheck(mail)
     $host = 'wm2.ray.co.jp'
     $treebase = "ou=Mail,dc=ray,dc=jp"
   else 
-    $result = "ドメイン #{domain}は未対応です。"
+    $result = "ドメイン #{domain}は未対応です。#{$ldap}"
     $mailok = false
     $host = nil 
     return true 
@@ -354,38 +360,35 @@ def adrcheck(mail)
 
   if hits > 0 then
     $mailok = false 
-    $result = "#{target}_is_already_exists.#{hits}"  
+    $resk += "#{target}_is_already_exists.#{hits}"  
     return hits  
   else 
     $mailok = true 
-    $result = "" #  "#{target}_is_OK.#{hits}"  
+    $resk +=  "#{target}_is_OK.#{hits}"  
     return hits 
   end
 end  ## adrcheck end 
 
-if (r1=adrcheck($mail)) == 0 then 
-  b1 = $mail.split('@')
-  if b1 != nil then 
-    if b1[1] == 'ray.co.jp' then 
-      mail2 = b1[0] + '@ss.ray.co.jp' 
-    else 
-      mail2 = b1[0] + '@ray.co.jp' 
-    end 
-    if (r2 =adrcheck(mail2)) == 0 then 
-      # both @ray.co.jp & @ss.ray.co.jp is ok
-      $result += "#{$mail}:#{r1}_#{mail2}:#{r2}"
-    else 
-      exit_job  
-    end 
+r1=adrcheck($mail)
+b1 = $mail.split('@')
+if b1 != nil then 
+  if b1[1] == 'ray.co.jp' then 
+    mail2 = b1[0] + '@ss.ray.co.jp' 
   else 
-    $resutl += "#{$mail} address error!" 
-    exit_job 
-  end   
-else
+    mail2 = b1[0] + '@ray.co.jp' 
+  end 
+  r2 =adrcheck(mail2) 
+  # both @ray.co.jp & @ss.ray.co.jp is ok
+  $resk += "  --  #{$mail}:#{r1}_#{mail2}:#{r2}"
+  unless (r1 ==0 && r2 == 0) || ($force != nil) then 
+    exit_job  
+  end 
+else 
+  $result += "#{$mail} address error!" 
   exit_job 
-end    
+end   
  
-# puts "$mail: #{$mail} $domain: #{$domain} $host: #{$host}" 
+puts "$mail: #{$mail} $domain: #{$domain} $host: #{$host}" 
 if ($mode == 1) && $mailok then  
   ## set ldap data 
   $host = getldap($mail) 
@@ -482,7 +485,8 @@ if ($mode == 1) && $mailok then
   dnet_s = sjis_conv($dnet) 
   File.write( "./dnetbackup/" +$dnfile, dnet_s ) 
   ## output file for biz mail 
-
+#  puts "Written #{$mail}, #{$dnfile}"  
+#  exit  
 #  Biz mail 一括登録基本情報
 #  email, グループ名、姓、姓（ふりがな）、名、名（ふりがな）、パスワード、アカウントステータス(0),管理者権限(0)
   
