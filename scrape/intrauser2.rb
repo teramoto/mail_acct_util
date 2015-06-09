@@ -3,8 +3,6 @@
 require 'rubygems'
 require 'mechanize'
 require 'kconv'
-require 'byebug' 
-
 if (ARGV.length < 3 ) then 
   puts "needs login ID and password, email"
   exit
@@ -18,13 +16,12 @@ $domain = dd[1]
 
 agent =  Mechanize.new
 #agent.add_auth('http://intra.ray.co.jp/cgi-bin/dnet/dnet.cgi','0005','8500')
-login_page = agent.get('http://intra.ray.co.jp/cgi-bin/dneo/dneo.cgi') 
+login_page = agent.get('http://intra.ray.co.jp/cgi-bin/dnet/dnet.cgi') 
   p login_page
-  $my_page = login_page.form_with(:name => 'inputfrm') do  |f|
-  p f 
+  $my_page = login_page.form_with(:name => 'form2') do  |f|
 puts ('*** start ***')
-  p $my_page  
-#  $my_page.fields.each { |fn| puts fn.name } 
+  
+#  my_page.fields.each { |fn| puts fn.name } 
 
 #  f.field_with(:name => 'UserID').value  = $user
   f.UserID = $user
@@ -34,9 +31,8 @@ puts ('*** start ***')
 #  p form
 end.click_button
 
-puts ("ログインしました。ID =#{$user}")
 p agent.page 
-puts agent.page 
+puts ("ログインしました。ID =#{$user}")
 puts agent.page.title
   if agent.page.title != 'レイ・グループ - メール一覧' then 
      webmail = agent.get('xmail.cgi?page=maillist&log=on')
@@ -90,11 +86,20 @@ puts webmail.title
     #  radio pop3kind = 3  
     $m_form.radiobuttons_with(:name => 'pop3kind')[2].check
     $m_form.radiobuttons_with(:name => 'smtpkind')[2].check
-    $m_form.field_with(:name => 'pop3server').value = 'tc-max.co.jp'
-    $m_form.field_with(:name => 'smtpserver').value = 'smtp.tc-max.co.jp'
-    $m_form.field_with(:name => 'userid').value = $userid + '@tc-max.co.jp' 
+    $m_form.field_with(:name => 'pop3server').value = 'mas14.kagoya.net'
+    $m_form.field_with(:name => 'smtpserver').value = 'mas14.kagoya.net'
+    $m_form.field_with(:name => 'userid').value = 'tcm.' + $userid + '@tc-max.co.jp' 
+  when 'ss.ray.co.jp'
+    #  radio pop3kind = 3  
+    $m_form.radiobuttons_with(:name => 'pop3kind')[2].check
+    $m_form.radiobuttons_with(:name => 'smtpkind')[2].check
+    $m_form.radiobuttons_with(:name => 'popbsmtp')[2].check
+    $m_form.field_with(:name => 'smtpauthkind').option_with( :value => '2').select
+    $m_form.field_with(:name => 'pop3server').value = 'www16276uf.sakura.ne.jp'
+    $m_form.field_with(:name => 'smtpserver').value = 'www16276uf.sakura.ne.jp'
+    $m_form.field_with(:name => 'userid').value = $userid + '@ss.ray.co.jp' 
   end 
-
+  $m_form.checkbox_with(:name => 'sync').check 
   p $m_form.field_with(:name => 'userid').value
   p $m_form.field_with(:name => '_word').value 
   p $m_form.field_with(:name => 'pop3server').value 

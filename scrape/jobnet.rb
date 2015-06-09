@@ -1,10 +1,7 @@
 # encoding: utf-8 
 
-require 'rubygems'
 require 'mechanize'
 require 'kconv'
-require 'byebug' 
-
 if (ARGV.length < 3 ) then 
   puts "needs login ID and password, email"
   exit
@@ -18,13 +15,14 @@ $domain = dd[1]
 
 agent =  Mechanize.new
 #agent.add_auth('http://intra.ray.co.jp/cgi-bin/dnet/dnet.cgi','0005','8500')
-login_page = agent.get('http://intra.ray.co.jp/cgi-bin/dneo/dneo.cgi') 
+login_page = agent.get('http://jobnet.ray.co.jp/rj/rj_sys.asp') 
   p login_page
-  $my_page = login_page.form_with(:name => 'inputfrm') do  |f|
-  p f 
+  p login_page.forms 
+  puts login_page.body 
+  $my_page = login_page.form_with(:name => 'form2') do  |f|
 puts ('*** start ***')
-  p $my_page  
-#  $my_page.fields.each { |fn| puts fn.name } 
+exit  
+  my_page.fields.each { |fn| puts fn.name } 
 
 #  f.field_with(:name => 'UserID').value  = $user
   f.UserID = $user
@@ -34,9 +32,8 @@ puts ('*** start ***')
 #  p form
 end.click_button
 
-puts ("ログインしました。ID =#{$user}")
 p agent.page 
-puts agent.page 
+puts ("ログインしました。ID =#{$user}")
 puts agent.page.title
   if agent.page.title != 'レイ・グループ - メール一覧' then 
      webmail = agent.get('xmail.cgi?page=maillist&log=on')
@@ -72,7 +69,7 @@ puts webmail.title
   $m_form = agent.page.form_with(:name => '_form') 
   p $m_form 
   p $m_form.field_with(:name => 'account').value 
-  $m_form.field_with(:name => 'userid').value = $userid + "@ray.co.jp" 
+  $m_form.field_with(:name => 'userid').value = $userid
   $m_form.field_with(:name => '_word').value = $pass 
   $m_form.field_with(:name => 'mail').value = $email
   puts "#{$userid}:#{$domain}" 
