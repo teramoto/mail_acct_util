@@ -57,7 +57,7 @@ def exit_job
 #      $mail += $domain
 #      puts "mail :#{$mail}" if $DEBUG  
 #    end   
-  redirect_url = 'mchk.rhtml' + '?' + "result=#{$resk}__#{$result}&email=#{$mail}&domain=#{$domain}&shain=#{$shain}&passwd=#{$passwd}&mei=#{$mei}&sei=#{$sei}&name=#{$name}&f_name=#{$f_name}" 
+  redirect_url = 'mchk.rhtml' + '?' + "result=#{$resk}__#{$result}&email=#{$mail}&domain=#{$domain}&shain=#{$shain}&passwd=#{$passwd}&mei=#{$mei}&sei=#{$sei}&name=#{$name}&f_name=#{$f_name}&force=#{$force}" 
 
   ## $log.warn( cgi.header({ 'status' => 'REDIRECT', 'Location' => redirect_url} ))
   print $cgi.header({ 'status' => 'REDIRECT', 'Location' => redirect_url} )
@@ -169,19 +169,6 @@ else
   $err += 1 
   $result += "メールアドレスが不正です。"
 end 
-# if (($domain =="") || ($domain == 'ray.co.jp')) then
-  # $uid をローカル部だけに。
-#  if ((mad = $mail.split("@")) != nil) then 
-#    $uid = mad[0]
-  #  $domain = mad[1]
-#  else 
-#    $err +=1 
-#    $result  += "メールアドレスエラー"
-#  end
-# else 
-#  $uid = $mail 
-# end 
-# puts "mail #{$mail}, domain #{$domain} " 
 
 def getemail(sname, fname, shain)
   ff = Romaji.kana2romaji(fname)
@@ -202,6 +189,7 @@ def getemail(sname, fname, shain)
   return mail 
 end
 
+# input data validation
 if Moji.type($name) == Moji::HAN_KATA  then 
   $name = Moji.han_to_zen($name)
   puts Moji.type($name) if $DEBUG
@@ -270,14 +258,17 @@ elsif $reset.length > 1 then
   $sei = ""
   $name =""
   $f_name =""
+  $resk = "" 
   $result = "Reset Complete." 
   exit_job 
   exit 
 else 
   $mode = 0   # check mode.
 end
+
+# create password if no password is given.
 if $passwd == nil || $passwd.length < 8 then 
-  $passwd = mkps8  
+  $passwd = mkps8  # create new password 
   puts "password:#{$passwd}" if $DEBUG
   $log.warn($passwd) 
 end 
@@ -380,15 +371,26 @@ if b1 != nil then
   r2 =adrcheck(mail2) 
   # both @ray.co.jp & @ss.ray.co.jp is ok
   $resk += "  --  #{$mail}:#{r1}_#{mail2}:#{r2}"
-  unless (r1 ==0 && r2 == 0) || ($force != nil) then 
-    exit_job  
+  
+  if (r1 >0 || r2 > 0) then
+    if ($force != 'on') then 
+      exit_job 
+    else
+      $mailok = true  
+      $result += "\t r1:#{r1},r2:#{r2},force:#{$force}" 
+#      exit_job 
+    end 
+  else 
+    $result += "\t r1:#{r1},r2:#{r2},force:#{$force}" 
+    # continue to create data  exit_job  
   end 
 else 
   $result += "#{$mail} address error!" 
   exit_job 
 end   
- 
-puts "$mail: #{$mail} $domain: #{$domain} $host: #{$host}" 
+puts "continue to create data...." if $DEBUG 
+
+puts "$mail: #{$mail} $domain: #{$domain} $host: #{$host}" if $DEBUG 
 if ($mode == 1) && $mailok then  
   ## set ldap data 
   $host = getldap($mail) 
@@ -480,7 +482,7 @@ if ($mode == 1) && $mailok then
   File.write( "./ldifbackup/" +$mail,$ldif) 
 ## print dnet csv
   $dnet = sprintf ("0,0,")
-  $dnet += sprintf("#{$sei}　#{$mei},#{$f_name}　#{$name},#{$shain},#{$passwd},#{$mail},,,,,,,,,,,,,,,,,,rg1099," )
+  $dnet += sprintf("#{$sei}　#{$mei},#{$f_name}　#{$name},#{$shain},#{$passwd},#{$mail},,,,,,,,,,,,,,,,,,,,"",ja_JP,JST,期間外,*173" )
   $dnfile = $mail + "_dnet.csv" 
   dnet_s = sjis_conv($dnet) 
   File.write( "./dnetbackup/" +$dnfile, dnet_s ) 
@@ -489,8 +491,10 @@ if ($mode == 1) && $mailok then
 #  exit  
 #  Biz mail 一括登録基本情報
 #  email, グループ名、姓、姓（ふりがな）、名、名（ふりがな）、パスワード、アカウントステータス(0),管理者権限(0)
-  
-  bas = "#{$mail},ユーザー,#{$sei},#{$f_name},#{$mei},#{$name},#{$passwd},0,0\n"
+ 
+  fn = Moji.hira_to_kata($f_name)
+  nm = Moji.hira_to_kata($name) 
+  bas = "#{$mail},ユーザー,#{$sei},#{fn},#{$mei},#{nm},#{$passwd},0,0\n"
 #  p bas  
   bas_s = sjis_conv(bas)
   $bfile1 = $mail + ".csv" 

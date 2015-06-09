@@ -51,7 +51,7 @@ when 'ray.co.jp'
       ldapdel("uid=#{uid},ou=Mail,dc=ray,dc=co,dc=jp", ldap)
     end 
 when 'ss.ray.co.jp' 
-    ldapdel("uid=#{email},ou=Mail,dc=ray,dc=co,dc=jp", ldap)
+    ldapdel("uid=#{email},ou=Mail,dc=ray,dc=jp", ldap)
 else
   case ldap
   when 'ldap.ray.co.jp'

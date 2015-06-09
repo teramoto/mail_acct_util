@@ -398,7 +398,7 @@ end
     end 
 
     if $intra then 
-      `scp root@intra.ray.co.jp:~/pass.txt .` 
+      `scp root@intra.ray.co.jp:/var/www/cgi-bin/pass.txt .` 
       intr  = Array.new 
       intr[0] = "イントラログインID:#{$shain}"
       intr[1] = "イントラ初期パスワード:#{passwd}"

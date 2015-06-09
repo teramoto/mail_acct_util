@@ -12,6 +12,12 @@
   <link rel="stylesheet" href="../css/foundation.css" />
 
   <script src="../js/vendor/custom.modernizr.js"></script>
+  <script type="text/javascript">
+     function clear() { 
+	    document.getElementsByName('sei').value = "" ; 
+	 }
+  
+  </script>
 
 </head>
 <body>
@@ -30,6 +36,7 @@
 <% $passwd = cgi['passwd'] %>
 <% $shain = cgi['shain'] %>
 <% $f_name = cgi['f_name'] %> 
+<% $force = cgi['force'] %>
   <div class="row">
     <div class="twelve columns">
       <h2>メールアカウント</h2>
@@ -47,8 +54,9 @@
     <fieldset>
       <legend>LdapServer</legend>
       <div class="row">
-        <div class="small-2 large-4 columns">姓
-          <input type="text" name="sei" value="<%= $sei %>"  />
+        <div class="small-2 large-4 columns">
+          <label>姓</label>
+          <input type="text" name="sei" value="<%= $sei %>" />           
         </div>
         <div class="small-2 large-4 columns">
           <label>名</label>
@@ -73,7 +81,7 @@
         <label for="shain;">メールドメイン：</label>
         <select id="domain" name="domain" value="<%=$domain %>" >
           <option value="ray.co.jp">ray.co.jp</option>
-          <option value="ray.co.jp">ss.ray.co.jp</option>
+          <option value="ss.ray.co.jp">ss.ray.co.jp</option>
           <option value="plays.co.jp">plays.co.jp</option>
           <option value="digisite.co.jp">digisite.co.jp</option>
           <option value="wes.co.jp">wes.co.jp</option>
@@ -92,8 +100,8 @@
           <input type="text" name="passwd"  class="three" value="<%=$passwd %>" /> 
           <input type="submit" name="check" value="check">
           <input type="submit" name="create" value="create"> 
-          <input type="reset" name="reset" value="reset">
-          <input type="checkbox" name="force" id="checkbox">
+          <input type="reset" name="reset" value="reset" onClick="">
+          <input type="checkbox" name="force" id="checkbox"  "<=% if $force== 'on'  then 'checked'  else end %>" >
           強制作成
         </div>
       </div>
