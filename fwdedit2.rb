@@ -1,19 +1,20 @@
-#!/usr/local/bin/ruby
-
 require 'net/ldap'
 require 'cgi'
 require './ldaputil.rb'
 require 'optparse'
 
+# from optparse import OptionParser
+
 puts "editing forward address.."
-puts "forwardaddress, address to add/del, cmd (add,del,chk)" 
+usage= "forwardaddress, address to add/del, cmd (add,del,chk)" 
 
 ## main start
-opt = OptionParser.new
+#opt = OptionParser.new # (usage = usage)
+opt  = OptionParser.new(usage=usage)
 OPTS = {}
 Version = '0.2' 
 deb = false 
-opt.on('-d ', 'debug mode ') { deb = true }
+opt.on('-d', 'debug mode ') { deb = true }
 $traddr = Array.new
 
 # puts ARGV[0] ,ARGV[1], ARGV[2]
@@ -54,16 +55,34 @@ else
 end 
 puts "fwaddr = #{fwaddr}" 
 
+#bb = fwaddr.split('@') 
+#if bb == nil then 
+#  puts "invalid address #{fwaddr}" 
+#  exit -1
+#elsif $udomain.include?(bb[1]) then 
+#  puts "domain #{bb[1]}" 
+#  domain = "wm2.ray.co.jp" 
+#else 
+#  puts "unsupported domain #{bb[1]}" 
+#  exit -1 
+#end
+$ldap1 = getldap(fwaddr) 
+
 if $cmd == nil || $cmd.length < 1 then
   $cmd = "chk" 
 end 
-if (result=getfwd(fwaddr)) == true then 
+byebug if deb
+if (result=getfwd(fwaddr, $ldap1)) == true then 
   puts result 
   STDERR.puts "Error:fwd adress #{fwaddr} not exsits."
 else 
-  1.upto($traddr.size-1) do |tt| 
-    result=  fwedit(fwaddr, $traddr[tt], $cmd)
-    puts result 
-  end
+  result = fwedit(fwaddr, $traddr[0], $cmd, $ldap1)
+  puts "result = #{result.join(',')}" 
+  p result if deb
+#  1.upto($traddr.size-1) do |tt| 
+#    byebug if deb 
+#    result=  fwedit(fwaddr, $traddr[tt], $cmd, $ldap1)
+#    puts "result =#{result}"  
+#  end
 end 
 

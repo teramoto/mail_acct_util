@@ -5,6 +5,7 @@ require 'cgi'
 require './ldaputil.rb'
 require 'optparse'
 
+puts "This program is obsolute.please use fwdedit2.rb instead." 
 puts "editing forward address.."
 puts "forwardaddress, address to add/del, cmd (add,del,chk)" 
 

@@ -5,6 +5,8 @@ require 'net/ldap'
 require 'logger'
 require 'tracer' 
 require 'romaji'
+require 'byebug' 
+
 #
 # debug mode is controlled via $deb 
 #
@@ -120,7 +122,8 @@ def getldap( email )
   if $tdomain.index(ld[1]) then
     return  'ldap.ray.co.jp'
   elsif $udomain.index(ld[1]) then
-    return  'wm2.ray.co.jp'
+ #   return  'wm2.ray.co.jp'
+    return  'ldap2.ray.co.jp'
   else 
     return nil  # no ldap server to use...
   end 
@@ -416,8 +419,9 @@ def getfwd(addr, ldap)
     log = Logger.new($logpath)
     log.level = Logger::INFO
   end 
-  if ldap == "wm2.ray.co.jp" then 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
+  byebug if $deb 
+  if ldap == "ldap2.ray.co.jp" then 
+    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   else 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
@@ -512,7 +516,7 @@ def ldapdel(dn,host)
   if host == 'ldap.ray.co.jp' then  
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
   else 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
+    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
   end 
   hits =0
   result = "not executed"
@@ -544,8 +548,8 @@ def ldaprplattr(dn, uid, attr, value, ldaphost )
   when 'ldap.ray.co.jp' 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
-  when 'wm2.ray.co.jp'
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
+  when 'ldap2.ray.co.jp'
+    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   end 
   hits =0
@@ -624,7 +628,7 @@ end
 #
 # edit forwading address.. ( add, del members. )
 # 
-def fwedit(fwaddr, modaddr, cmd)
+def fwedit(fwaddr, modaddr, cmd , ldsrv )
   if $logpath then 
     log = Logger.new($logpath)
     log.level = Logger::WARN
@@ -645,7 +649,14 @@ def fwedit(fwaddr, modaddr, cmd)
     STDERR.puts "Error: fwedit: modaddr not defined."
     return nil
   end 
-  auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
+  if ldsrv=="ldap2.ray.co.jp" then 
+    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password =>"ray00" }
+  elsif ldsrv == "ldap.ray.co.jp" then 
+    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
+  else
+     puts "ldap server error! #{ldap}" 
+     exit -1 
+  end 
   hits =0
   result = "not executed" 
   p cmd
@@ -653,12 +664,20 @@ def fwedit(fwaddr, modaddr, cmd)
   when 'chk','add','del'
     p cmd if $deb 
 #    begin
-      Net::LDAP.open(:host =>'ldap.ray.co.jp',:port => 389 , :auth => auth  ) do |ldap|
+      Net::LDAP.open(:host =>ldsrv ,:port => 389 , :auth => auth  ) do |ldap|
       #  ,:encryption => :simple_tls # ldap.port = 389 636
         filter = Net::LDAP::Filter.eq('mail', fwaddr)
   #    p filter
-        treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
+        if ldsrv == "ldap.ray.co.jp" then 
+          treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
+        elsif ldsrv =="ldap2.ray.co.jp" then 
+          treebase = "ou=Mail,dc=ray,dc=jp"
+        else 
+          STDERR.puts "invalid Ldap server #{ldsrv}" 
+          exit -1 
+        end 
         $resdn = nil
+        byebug if $deb 
         ldap.search(:base => treebase, :filter => filter ) do |entry|
   #        if entry.length > 1 then 
   #          log.warn("fwedit: entry size =#{entry.size}") if $logpath 
@@ -699,7 +718,7 @@ def fwedit(fwaddr, modaddr, cmd)
             STDERR.puts "#{modaddr} is included in transfer address <#{fwaddr}>"
           end
           puts "#{$valw.size} address in the list." 
-          return result 
+          return $valw  # result 
         else 
           log.fatal("fwedit: cmd error = #{cmd}") if $logpath 
           return true 

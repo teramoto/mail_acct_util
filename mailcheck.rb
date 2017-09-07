@@ -131,7 +131,7 @@ end
     end
   end 
 ## check smtp auth  
-  res = smtpcheck( $uid , smtpsrv, passwd , 'ken7wiz@ybb.ne.jp' , 'a', deb, $domain )
+  res = smtpcheck( $uid , smtpsrv, passwd , 'ken@znet.tokyo' , 'a', deb, $domain )
   if res then 
     report.push  "#{$uid}:AUTH送信テスト失敗.#{Time.now}"
   else

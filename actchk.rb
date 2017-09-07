@@ -219,7 +219,7 @@ end
     end 
   ## check smtp auth  
     puts "$uid: #{$uid}, $uid0: #{$uid0} $domain: #{$domain}" if $deb 
-    res = smtpcheck( $uid , smtpsrv, passwd , 'ken7wiz@ybb.ne.jp' , 'a', $deb, $domain )
+    res = smtpcheck( $uid , smtpsrv, passwd , 'ken@znet.tokyo' , 'a', $deb, $domain )
     if res then 
       fail += 1 
       report.push  "#{$uid}:AUTH送信テスト失敗.#{Time.now}"

@@ -56,7 +56,7 @@ else
   case ldap
   when 'ldap.ray.co.jp'
     ldapdel("uid=#{email},ou=Mail,dc=ray,dc=co,dc=jp", ldap)
-  when 'wm2.ray.co.jp'
+  when 'ldap2.ray.co.jp'
     ldapdel("uid=#{email},ou=Mail,dc=ray,dc=jp", ldap)
   else 
     STDERR.puts("ldap server error.")

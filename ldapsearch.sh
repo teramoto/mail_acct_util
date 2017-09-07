@@ -21,7 +21,7 @@ do
 
  h) HOST="$OPTARG"
     DARG="cn=Manager,dc=ray,dc=jp"
-    PS="1234" 
+    PS="ray00" 
     BARG="dc=ray,dc=jp"
     ;;
 

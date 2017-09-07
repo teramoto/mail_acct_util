@@ -14,7 +14,6 @@ do
   case $OPT in 
  h) HOST="$OPTARG"
     DARG="cn=Manager,dc=ray,dc=jp"
-    PS="1234" 
     BARG="dc=ray,dc=jp"
     ;;
 

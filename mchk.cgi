@@ -9,6 +9,7 @@ require './ldaputil.rb'
 require 'tracer' 
 require 'romaji'
 require 'moji' 
+require 'byebug' 
 
 def sjis_safe(str)
   if str == nil then
@@ -41,7 +42,7 @@ end
 # check and create 
 # todo 
 # check local part for @ray.co.jp and @ss.ray.co.jp 
-# $DEBUG = 9 
+#$DEBUG = "9" 
 def exit_job
 #  $result += $force  
   if $mail && ($mail.index('@') == nil) then 
@@ -49,7 +50,7 @@ def exit_job
       p $mail
       p $domain
       p $result 
-    end if $DEBUG
+    end if $DEBUG != "0" 
     $result += "Email Address Error!#{$mail}"  
   end 
 #    if $domain != nil then 
@@ -81,7 +82,7 @@ def exit_finish
           $cgi.a("bizmail_ext/#{$bfile2}") { "BizMail Extend Information"  } 
         end +
         $cgi.p do  
-          $cgi.a("dnetbackup/#{$dnfile}") { "desknets accounr for import"  }
+          $cgi.a("dnetbackup/#{$dnfile}") { "desknets account for import"  }
         end +  
         $cgi.pre() do
           CGI.escapeHTML(
@@ -111,7 +112,7 @@ $force = $cgi.params['force'][0]
 # puts "$domain #{$domain}" 
 
 if $cgi['debug'] ==""  then 
-  $DEBUG = false
+  $DEBUG = "0"
 else 
   $DEBUG = $cgi['debug']
 end 
@@ -173,7 +174,7 @@ end
 def getemail(sname, fname, shain)
   ff = Romaji.kana2romaji(fname)
   ss = Romaji.kana2romaji(sname)
-  puts "#{ff}, #{ss}, #{shain}"  if $DEBUG  
+  puts "#{ff}, #{ss}, #{shain}"  if $DEBUG != "0"  
   snum = shain.to_i
   # 社員番号からドメインを決定 
   case snum
@@ -185,15 +186,15 @@ def getemail(sname, fname, shain)
   # oo -> o 
   mail_local = ss.sub( /oo/, "o")  
   mail = ff[0]  +"-"+  mail_local + "@" + dom 
-  puts mail  if $DEBUG
+  puts mail  if $DEBUG != "0" 
   return mail 
 end
 
 # input data validation
 if Moji.type($name) == Moji::HAN_KATA  then 
   $name = Moji.han_to_zen($name)
-  puts Moji.type($name) if $DEBUG
-  puts $name if $DEBUG 
+  puts Moji.type($name) if $DEBUG != "0"
+  puts $name if $DEBUG != "0" 
 end
 if Moji.type($name) == Moji::ZEN_KATA then 
   $name = Moji.kata_to_hira($name)
@@ -201,8 +202,8 @@ end
 if Moji.type($f_name) == Moji::HAN_KATA  then 
   $f_name = Moji.han_to_zen($f_name)
   $f_name = Moji.kata_to_hira($f_name)
-  puts Moji.type($f_name) if $DEBUG
-  puts $f_name if $DEBUG
+  puts Moji.type($f_name) if $DEBUG != "0"
+  puts $f_name if $DEBUG != "0" 
 end
 if Moji.type($f_name) == Moji::ZEN_KATA then 
   $f_name = Moji.kata_to_hira($f_name)
@@ -269,7 +270,7 @@ end
 # create password if no password is given.
 if $passwd == nil || $passwd.length < 8 then 
   $passwd = mkps8  # create new password 
-  puts "password:#{$passwd}" if $DEBUG
+  puts "password:#{$passwd}" if $DEBUG != "0" 
   $log.warn($passwd) 
 end 
 ## check email address exists on ldap db.....
@@ -282,6 +283,7 @@ end
 $resk = "" 
 # Check if given address is already taken? 
 def adrcheck(mail) 
+#  byebug 
   target = mail
   attr = "mail"  
   bb = mail.split('@')
@@ -289,8 +291,8 @@ def adrcheck(mail)
     domain = bb[1] 
     uid = bb[0]  
   else 
-    puts "e-mail addres error." if $DEBUG  
-    return true  
+    puts "e-mail addres error." if $DEBUG != "0"  
+    return 0 # true  
   end 
   # decide parameters for each ldap server 
   $ldap = getldap(mail)
@@ -300,18 +302,18 @@ def adrcheck(mail)
     $auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     $host = 'ldap.ray.co.jp'
     $treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
-  when 'wm2.ray.co.jp' 
-    $auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
-    $host = 'wm2.ray.co.jp'
+  when  'ldap2.ray.co.jp'
+    $auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
+    $host = 'ldap2.ray.co.jp'
     $treebase = "ou=Mail,dc=ray,dc=jp"
   else 
     $result = "ドメイン #{domain}は未対応です。#{$ldap}"
     $mailok = false
     $host = nil 
-    return true 
+    return
   end 
-  if $host.length < 1 then  
-    return true 
+  if $host == nil || $host.length < 1 then  
+    return 0
   else 
     hits=0
     $result = "not executed" 
@@ -321,26 +323,26 @@ def adrcheck(mail)
     Net::LDAP.open(:host => $host ,:port => 389 , :auth => $auth  ) do |ldap|
     #  ,:encryption => :simple_tls # ldap.port = 389 636
       filter = Net::LDAP::Filter.eq( attr, target)
-      p filter if $DEBUG 
+      p filter if $DEBUG != "0"  
       ldap.search(:base => $treebase, :filter => filter ) do |entry|
-        puts entry if $DEBUG
+        puts entry if $DEBUG != "0" 
         uidc = 0
         hits+= 1
         $log.warn("DN: #{entry.dn}")
         entry.each do |attribute, values|
           if attribute == 'uid' then
             uidc += 1
-            puts "<#{attribute}>" if $DEBUG
+            puts "<#{attribute}>" if $DEBUG != "0" 
           end
-          print " #{attribute}:" if $DEBUG
+          print " #{attribute}:" if $DEBUG != "0" 
           values.each do |value|
-            print "#{value}" if $DEBUG
+            print "#{value}" if $DEBUG != "0" 
           end
-          print "\n" if $DEBUG 
+          print "\n" if $DEBUG != "0" 
         end
         if uidc > 1 then
           $log.warn( "uid#{uidc}  error in #{entry.dn}")
-          puts ( "uid#{uidc}  error in #{entry.dn}") if $DEBUG 
+          puts ( "uid#{uidc}  error in #{entry.dn}") if $DEBUG != "0"  
         end
       end
       $log.info(ldap.get_operation_result)
@@ -359,7 +361,7 @@ def adrcheck(mail)
     return hits 
   end
 end  ## adrcheck end 
-
+#byebug
 r1=adrcheck($mail)
 b1 = $mail.split('@')
 if b1 != nil then 
@@ -367,11 +369,12 @@ if b1 != nil then
     mail2 = b1[0] + '@ss.ray.co.jp' 
   else 
     mail2 = b1[0] + '@ray.co.jp' 
-  end 
+  end
+#  byebug 
   r2 =adrcheck(mail2) 
   # both @ray.co.jp & @ss.ray.co.jp is ok
   $resk += "  --  #{$mail}:#{r1}_#{mail2}:#{r2}"
-  
+  puts r1,r1.class, r2, r2.class if $DEBUG != "0"  
   if (r1 >0 || r2 > 0) then
     if ($force != 'on') then 
       exit_job 
@@ -388,9 +391,9 @@ else
   $result += "#{$mail} address error!" 
   exit_job 
 end   
-puts "continue to create data...." if $DEBUG 
+puts "continue to create data...." if $DEBUG != "0"  
 
-puts "$mail: #{$mail} $domain: #{$domain} $host: #{$host}" if $DEBUG 
+puts "$mail: #{$mail} $domain: #{$domain} $host: #{$host}" if $DEBUG != "0" 
 if ($mode == 1) && $mailok then  
   ## set ldap data 
   $host = getldap($mail) 
@@ -399,7 +402,7 @@ if ($mode == 1) && $mailok then
     $uid = bb[0]
     $domain = bb[1]
   end 
-  puts "#{$uid},#{$uid1},#{$domain},#{$domain1}" if $DEBUG  
+  puts "#{$uid},#{$uid1},#{$domain},#{$domain1}" if $DEBUG != "0"  
   # pop account : a-arakawa
   if $domain == 'ray.co.jp' then 
     $domain1 = '' 
@@ -407,7 +410,7 @@ if ($mode == 1) && $mailok then
   else
     $domain1 = $domain 
   end 
-  if $host == 'wm2.ray.co.jp'  then
+  if ($host == 'ldap2.ray.co.jp')  then
     $uid1 = $mail 
     dn = "uid=#{$uid1},ou=Mail,dc=ray,dc=jp"
     attr = {
@@ -450,7 +453,7 @@ if ($mode == 1) && $mailok then
      :wifiuid => $mail ,
      :accountActive => "TRUE",
      :domainName => $domain,  
-#    :transport => 'virtual'
+#     :transport => 'virtual'
      :transport => 'smtp:[vcgw1.ocn.ad.jp]'
     }
   end 
@@ -468,13 +471,13 @@ if ($mode == 1) && $mailok then
   $ldif += sprintf "mailDir: #{$domain}/#{$uid}/Maildir/\n"
   $ldif += sprintf "mail: #{$mail}\n"
   $ldif += sprintf "mailQuota: 256\n" 
-  unless $host == 'wm2.ray.co.jp' then 
+  unless ($host == 'ldap2.ray.co.jp ') then 
     $ldif += sprintf "accountKind: 1\n"
     $ldif += sprintf "wifiuid: #{$mail}\n"
   end
   $ldif += sprintf "accountActive: TRUE\n"
   $ldif += sprintf "domainName: #{$domain}\n"   
-  if $host == 'wm2.ray.co.jp' then 
+  if ($host == 'ldap2.ray.co.jp') then 
     $ldif += sprintf "transport: virtual\n"
   else 
     $ldif += sprintf "transport: smtp:[vcgw1.ocn.ad.jp]\n"
@@ -482,7 +485,7 @@ if ($mode == 1) && $mailok then
   File.write( "./ldifbackup/" +$mail,$ldif) 
 ## print dnet csv
   $dnet = sprintf ("0,0,")
-  $dnet += sprintf("#{$sei}　#{$mei},#{$f_name}　#{$name},#{$shain},#{$passwd},#{$mail},,,,,,,,,,,,,,,,,,,,"",ja_JP,JST,期間外,*173" )
+  $dnet += sprintf("#{$sei}　#{$mei},#{$f_name}　#{$name},#{$shain},#{$passwd},#{$mail},,,,,,,,,,,,,,,,,,,,"",ja_JP,JST,期間外,*173\n" )
   $dnfile = $mail + "_dnet.csv" 
   dnet_s = sjis_conv($dnet) 
   File.write( "./dnetbackup/" +$dnfile, dnet_s ) 
@@ -503,19 +506,21 @@ if ($mode == 1) && $mailok then
 # アカウント詳細情報（変更）
 # email, 表示名、Middle,global連動(0), PW変更(0), 説明、備考、郵便番号、都道府県、市町村、住所、国、会社、会社（フリガナ）、役職、電話番号、自宅電話、携帯、ポケットベル、FAX、メールをHTMLで表示(0)、HTHMLメールに外部イメージを表示(0)、新着メール通知アドレスを有効に(0)、新着通知メールアドレス、自動返信メッセージ有効、メール送信許可アドレス１、メール送信許可アドレス２、メール送信許可アドレス３、設定不要、設定不要、転送設定有効、作成メール形式(0:text,1:html)、UIテーマ、メッセ維持のコピーをBOXに残さない、IMAP有効(1),IMAP検索フォルダを表示(0), TZ077,5,0,0,0  
 # 1- 41  
-  ext = "#{$mail},#{$sei}　#{$mei},,0,0,,#{$shain},,,,,,,,,,,,,,1,1,0,,0,,,,,,0,1,beach,0,1,0,TZ077,5,0,0,0\n" 
+  ext = "#{$mail},#{$sei}　#{$mei},,0,0,,#{$shain},,,,,,,,,,,,,,1,1,0,,0,,,,,,0,1,beach,0,1,0,TZ077,5,0,0,0,0\n" 
   ext_s = sjis_conv(ext) 
   $bfile2 = $mail + "_ext.csv" 
   File.write("./bizmail_ext/" + $bfile2 , ext_s)
 ## bizmail end
 ## add entry to ldap
+  puts $host if $DEBUG != "0" 
+#  byebug 
   Net::LDAP.open(:host => $host ,:port => 389 , :auth => $auth  ) do |ldap|
     #  ,:encryption => :simple_tls # ldap.port = 389 636
     #    p filter
-    p dn if $DEBUG 
-    p attr if $DEBUG
+    p dn if $DEBUG != "0"  
+    p attr if $DEBUG != "0" 
     ldap.add( :dn => dn, :attributes => attr ) 
-    p ldap.get_operation_result  if $DEBUG #  .code 
+    p ldap.get_operation_result  if $DEBUG != "0"#  .code 
     $result = ldap.get_operation_result.to_s  #  .code 
   end
   exit_finish
