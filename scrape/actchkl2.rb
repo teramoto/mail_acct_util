@@ -24,14 +24,19 @@ $wdomain = [ "tc-max.co.jp" ] # kagoya
 $cdomain = [ "digisite.co.jp", "plays.co.jp", "wbc-dvd.com", "tera.nu"  ] # smtp.ray.co.jp 
 $xdomain = [ "c.ray.co.jp" ] # sakura hosting 
 $tcmpassfile  = "/var/www/html/foundation-4/admin/scrape/tcmpass.csv"
-$craypassfile = "/var/www/html/foundation-4/admin/scrape/craymail.txt"
+$craypassfile = "/var/www/html/foundation-4/admin/scrape/craymail.csv"
 $wespassfile  = "/var/www/html/foundation-4/admin/scrape/wespass.csv" 
 $div = { "event kansai" => "yone@ray.co.jp,h-kagura@ray.co.jp"} 
 $logpath = "actchk.log" 
+## report addresses 
+$comide = [[ "miyazawa@ray.co.jp", "iwatani@ray.co.jp" ], ["y-kaneda@ray.co.jp", "s-yoshikai@ray.co.jp", "y-usui@ray.co.jp" ] ]
+$visual = [ "n-abe@ray.co.jp","t-hagiwa@ray.co.jp","y-fukuna@ray.co.jp","a-miwa@ray.co.jp" ]
+$event = [ "t-hayakawa@ray.co.jp","m-konno@ray.co.jp" ]
+$event2 = [ "d-endo@ray.co.jp", "s-ito@ray.co.jp", "t-hayakawa@ray.co.jp" ]
 
 $debugdebug = false 
 unless $debugdebug then 
-  $adminary = [ "yasu@ray.co.jp", "d-furuya@ray.co.jp","a-shigemune@ray.co.jp" ]
+  $adminary = [ "yasu@ray.co.jp", "d-furuya@ray.co.jp","a-shigemune@ray.co.jp","ict@ray.co.jp"]
 else 
   $adminary = [ "mtest@ray.co.jp", "ken_root@ray.co.jp" ]
 end 
@@ -50,16 +55,20 @@ $adm = Array.new
 $mailtest = true # do email test is default 
 $csv = false
 $csvt = false
+$outhost = "" 
 $supress = false 
 $passwd = "" 
 $name = "" 
 $deb = false
+$knr = true
 $ln = false
 $an = false 
 $resend = false
 $hmessage = "" 
-
+$jid = "" 
+$ssl = "" 
 opt.on('-a', 'anpi was set ') { $an = true }
+opt.on('-b VAL', 'set Jobnet ID number manually') {|v| $jid = v } 
 opt.on('-c VAL', 'cc: address to send report mail') {|v| $cc_cl.push(v) }
 opt.on('-d', 'debug mode ') { $deb = true }
 opt.on('-e', 'e-mail only') { $mail_only = true }
@@ -67,9 +76,11 @@ opt.on('-g VAL', 'group address belonged. ') {|v| $gp.push(v) }
 opt.on('-h VAL', 'heading message') { |v| $hmessage = v }
 opt.on('-i', 'intra was set ') { $intra = true }
 opt.on('-j', 'jobnet was set ') { $jn = true }
+opt.on('-k', 'do not send to kanri staff ') { $knr = false } 
 opt.on('-l', 'linguinet  ') { $ln = true }
 opt.on('-m VAL', 'additional e-mail address') { |v| $adm.push(v) }
 opt.on('-n VAL', 'supply name manually' ) { |v| $name = v }
+opt.on('-o VAL', 'set server  manually') { |v| $outhost = v }
 opt.on('-p VAL', 'supply password manually') { |v| $passwd = v }
 opt.on('-r', 're-send setting information(s).') { $resend = true }
 opt.on('-q VAL', 'division to send creation report.') {|v| $division =v } 
@@ -78,6 +89,7 @@ opt.on('-t VAL', 'to: address to send report mail') {|v| $to_cl.push(v) }
 opt.on('-u', 'output title line of csv') { $csvt = true }
 opt.on('-x', 'do not execute test') { $mailtest = false }
 opt.on('-y', 'output report as csv file') { $csv = true }
+opt.on('--[no-]ssl[=VAL]', 'set SSL manually') { |v| $ssl = v }
 
 
 rr = opt.parse!(ARGV)
@@ -88,16 +100,18 @@ begin
   p ARGV 
   puts "OPTS"
   p OPTS 
+  p $outhost
+  print "$ssl=#{$ssl}"
 end if $deb 
 $account = ARGV[0] 
- 
+
 if $account == nil || $account.length ==0 then 
   # STDERR.i
 #  STDERR.puts "Accouint is invalid.(#{$account})" 
   exit(-1)
 end
-$shain = ARGV[1]
-
+#$shain = ARGV[1]
+$shain == nil 
 $slist = Array.new  
 $clist = Array.new
 $tlist = Array.new 
@@ -139,7 +153,7 @@ if bb.size == 1 then
   $webmailm = "" 
 # check mail domain and server  
 elsif $tdomain.index(bb[1]) then
-  STDERR.puts "#{bb[1]}: $tdomain" 
+  STDERR.puts"#{bb[1]}: $tdomain" 
 #byebug 
   $uid  = $account 
   $email = $account 
@@ -170,12 +184,13 @@ elsif $udomain.index(bb[1]) then
 #  $webmailm = "https://www16276.sakura.ne.jp"
   $webmailm = "http://sk1.ray.co.jp"
   $webmailsp = "" 
-  $ldap = "wm2.ray.co.jp" 
+  $ldap = "ldap2.ray.co.jp" 
 elsif $wdomain.index(bb[1]) then 
   puts "#{bb[1]}: $wdomain" 
 # byebug 
-  $host = "mas14.kagoya.net"
-  $smtphost = "smtp.kagoya.net" 
+  ## onamae mail tc-max.co.jp  
+  $host = "pop9.gmoserver.jp"
+  $smtphost = "smtp9.gmoserver.jp" 
   $pop = {"pop3" => "110"}
   $imap = { "imap" => "143"  }
   $smtpSend  = { "smtp" => "587"   }
@@ -191,14 +206,14 @@ elsif $wdomain.index(bb[1]) then
   end 
   puts
 #  byebug
-  $uid = "tcm." + bb[0] 
+  $uid = $account # i"tcm." + bb[0] 
   $domain = bb[1] 
   $email = $account
-  $webmail   = "https://activemail.kagoya.com/"  
-  $webmailsp = "https://activemail.kagoya.com/am_bin/slogin?userid=#{$uid}" 
-  $webmailmb = "https://activemail.kagoya.com/am_bin/mlogin?userid=#{$uid}" 
+  $webmail   = "https://webmail9.rentalserver.jp/"
+#  $webmailsp = "https://activemail.kagoya.com/am_bin/slogin?userid=#{$uid}" 
+#  $webmailmb = "https://activemail.kagoya.com/am_bin/mlogin?userid=#{$uid}" 
   $manual = "http://it.ray.co.jp/html/mail" 
-  $manualm = "http://support.kagoya.jp/manual/startup/mail_account_settings.html#mailclient" 
+  $manualm = "http://guide.onamae-server.com/om/category.php?c=3"
   $ldap = "file"
   $passfile = $tcmpassfile
 elsif $vdomain.index(bb[1]) then # wes.co.jp  
@@ -226,12 +241,14 @@ elsif $vdomain.index(bb[1]) then # wes.co.jp
 elsif $xdomain.index(bb[1]) then # c.ray.co.jp  
   puts "#{bb[1]}: $xdomain" 
 #byebug 
-  $host = "c.ray.co.jp"
+#  $host = "c.ray.co.jp"
+  $host = "cray1.sakura.ne.jp"
   $pop = {"pop3" => "110" }
   $imap = { "imap" => "143" }
   puts '-' * 40 
 #  byebug
-  $smtphost = "c.ray.co.jp" 
+#  $smtphost = "c.ray.co.jp" 
+  $smtphost = "cray1.sakura.ne.jp" 
   $smtpSend  = {"smtp" => "25" , "smtp" => "587"}
   $smtpAuth =  [ "PLAIN", "LOGIN" ] 
   $uid =  $account
@@ -250,7 +267,12 @@ else
   STDERR.puts "uid = #{bb[0]}"
   STDERR.puts "not match. exit" 
   exit(-1)
-end 
+end
+## check overriding parameter 
+if $outhost.length > 0 then 
+   $host = $outhost
+   $smtphost = $outhost
+end
 #byebug 
 ## check pop behavior  
   $report = Array.new
@@ -292,21 +314,22 @@ end
         exit(-1)
       end 
     elsif ($name = getname($email)) == true then 
-      STDERR.puts "Cannot g1G/et name."
+      STDERR.puts "Cannot get name."
       exit(-1)
     else 
       gname = getgname($email) 
     end
-  end 
+  end
+#  byebug  
   if $shain == nil || $shain.length ==0  then
     if $ldap != 'file' then 
       $shain = ldapvalue( "mail", $email, "employeeNumber",$ldap) 
     else 
       $shain = "-99999" 
     end
-    if $shain == nil || $shain.length == 0 then 
+##    if $shain == nil || $shain.length == 0 then 
 ##      $shain = "-9999" 
-    end 
+##    end 
   end 
   if $shain == nil || $shain.length < 4 then  
     STDERR.puts "Need shain number... exit with error"
@@ -321,8 +344,31 @@ end
   popsrv = $host
   smtpsrv = $smtphost
 
-  usessls = $smtpSend.to_s.include?("SSL")  
-  usesslr = $pop.to_s.include?('SSL') 
+  if $ssl.class.to_s != 'String' then 
+    usessls = $ssl
+    usesslr = $ssl
+    if usessls then 
+       $smtpSend = { "smtps" => "465" } 
+    else
+       $smtpSend = { "smtp" => "25", "smtp" => "587" }
+    end
+    if usesslr then 
+       $pop = { "pop3" => "110" }
+    else 
+       $pop = { "pop" => "110" }
+    end 
+  else
+    usessls = $smtpSend.to_s.include?("SSL")  
+    usesslr = $pop.to_s.include?('SSL') 
+  end
+  begin
+    puts "$smtpSend " 
+    p $smtpSend
+    puts "$pop" 
+    p $pop
+    puts "usessls = #{usessls} " 
+    puts "usesslr = #{usesslr} " 
+  end if $deb
   if (($mailtest == true) || ($supress == false)) then # do mail test 
     puts "popcheck uid #{$uid}, #{popsrv}, #{$passwd} SSL:#{usesslr} " if $deb 
     res = popcheck($uid , popsrv, $passwd, $deb , usesslr  )
@@ -361,7 +407,7 @@ end
     puts "$uid: #{$uid}, $uid0: #{$uid0} $domain: #{$domain},#{usessls}" if $deb 
   #  byebug
     if $mailtest then 
-      res = smtpcheck( $uid , smtpsrv, $passwd , 'ken7wiz@ybb.ne.jp' , 'a', $deb, $domain, usessls )
+      res = smtpcheck( $uid , smtpsrv, $passwd , 'ken@ml.ray.co.jp' , 'a', $deb, $domain, usessls )
       if res then 
         fail += 1 
         $report.push  "#{$uid}:AUTH送信テスト失敗.#{Time.now}"
@@ -406,7 +452,7 @@ end
   $cc = Array.new 
   if (fail > 0)  then # Error in test phase.... 
     $to.push 'ken@ray.co.jp'
-    $subj = "#{$sl}設定完了報告(未完了)"
+    $subj = "#{$sl}設定完了報告(*)"
     STDERR.puts "mail will not be sent because of error(s) in test. "  
   else #  if (pass > 0)   ## send error main  
     $to.push($email)
@@ -431,11 +477,15 @@ def body_add( body)
   else
     passread = ""
   end
-
+#  byebug 
   body.push(name1)
+  ## general & e-mail information 
   $clist.push(($name.chomp).force_encoding('UTF-8'))
+  $tlist.push("e-mail 設定情報")
   $tlist.push(("名前").force_encoding('UTF-8'))
   if !$supress then 
+    body.push("-" * 50)
+    body.push("e-mail 設定情報")
     body.push("e-mail:#{$email}")
 #  body.push("メールID:#{$uid}")
     body.push("ログインID:#{$uid}")
@@ -443,7 +493,8 @@ def body_add( body)
     body.push("ログインパスワード:#{$passwd}")
 
     body.push("(#{passread})")
-    body.push("")
+##    body.push("社員番号:#{$shain}") if $shain.to_i > 0 
+#    body.push("")
    # for csv
     $tlist.push(("e-mail").force_encoding('UTF-8'))
     $tlist.push("ログインID")
@@ -456,7 +507,7 @@ def body_add( body)
 #    $clist.push(passread)
 # byebug  
     if $gp.size > 0 then 
-      body.push( "所属グループメール：#{grp}")
+      body.push( "所属グループメール：#{$grp}")
     else 
       body.push "" 
     end
@@ -533,8 +584,12 @@ def body_add( body)
     $mess1 += "-"*70 + "\n"
   end 
 end 
+## 
+## add account info to array 
+## 
 def add_mes( )  
-  if $intra then 
+  # byebug  
+  if $intra then  ## intranet information 
     `scp root@intra.ray.co.jp:/var/www/cgi-bin/pass.txt /tmp/ ` 
     if ($shain == nil || $shain.length < 4) then 
       STDERR.puts("You must supply shain # manually. commnad email shain# ")
@@ -573,7 +628,24 @@ def add_mes( )
   if $jn then 
 
     jb = Array.new 
-    jb.push("JobnetログインID:#{$shain}")
+    if $jid.length > 1 then 
+      if $jid.to_i > 0 && $jid.to_i < 10000 then
+ 
+         jidok = $jid.to_i
+      else 
+         STDERR.puts(" Error on Jobnet ID.#{$jid}" )
+         exit -1
+      end 
+    else
+      if $shain.to_i < 1 || $shain.to_i >= 10000 then 
+         STDERR.puts(" Error on Jobnet ID. #{$shain}")
+         exit -1 
+      else 
+         jidok = $shain.to_i 
+      end
+    end
+    
+    jb.push("JobnetログインID:#{jidok}")
     jb.push("Jobnet初期パスワード:#{$passwd}")
     jb.push("(#{passread})")
     # csv 
@@ -647,7 +719,7 @@ end
   else
     $to.push($to_cl)  
     mail.to = $to.uniq.join(",") 
-    if $resend != true then 
+    if $resend != true && $knr then 
       $cc.push($adminary)
     end  
     $cc.push($cc_cl)
@@ -657,15 +729,15 @@ end
 #  p $cmd 
 #  puts system($cmd) 
   if $gp.size == 0 then 
-    grp = "無し"
+    $grp = "無し"
   else 
-    grp = $gp.join(',')
+    $grp = $gp.join(',')
   end 
   # special fix
   passread = ""
   if $passwd.class == 'TrueClass' then
     $passwd = ""
-    byebug 
+ #   byebug 
   end  
   if $passwd != nil then 
     passread = kanayomi($passwd) 

@@ -105,7 +105,7 @@ def getpassG(email,passfile,domain)
 #  byebug
   if ($ldap == 'file') then 
     if (passwd = getpass_from_file(email,passfile,domain)) == true then 
-      STDERR.puts "Cannot get password from file.#{email} "
+      STDERR.puts "Cannot get password from file (#{passfile}).#{email} "
       return "" 
     else 
       return passwd 

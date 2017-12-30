@@ -19,7 +19,7 @@ $arg = opt.parse(ARGV)
 acctfile = ARGV[0]
 trfile = ARGV[1] 
 puts "account file: #{acctfile}" 
-puts "transfer addres to chkeck: #{trfile}" 
+puts "transfer addres to check: #{trfile}" 
 # sleep(5)
 account = Array.new
 toaddr = Array.new

@@ -99,12 +99,16 @@ end
 # global arrays for domains handled 
 # 
 #  handled by smtp.ray.co.jp
-$tdomain = [ "ray.co.jp", "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu"  ]
+$tdomain = [ "ray.co.jp" ] 
+$tldap = 'ldap.ray.co.jp' 
 # handled by sakura server www16276uf.sakura.ne.jp
 $udomain = [ "ss.ray.co.jp" , "nissayseminar.jp", "nissayspeech.jp", "mcray.jp", "lic.prent.jp", "nissay-miraifes.jp" ]
+# $uldap = 'wm2.ray.co.jp'
+$uldap = 'ldap2.ray.co.jp'
 $vdomain = [ "wes.co.jp" ]  # web areana 
 $wdomain = [ "tc-max.co.jp" ] # kagoya 
-$cdomain = [ "ray.co.jp" , "digisite.co.jp", "plays.co.jp" ]
+$cdomain = [ "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu"  ]
+# $cldap = 'ldap.ray.co.jp'
 #
 # get ldap host from email  
 #
@@ -118,9 +122,9 @@ def getldap( email )
     return true 
   end 
   if $tdomain.index(ld[1]) then
-    return  'ldap.ray.co.jp'
+    return  $tldap  # 'ldap.ray.co.jp'
   elsif $udomain.index(ld[1]) then
-    return  'wm2.ray.co.jp'
+    return  $uldap  # 'wm2.ray.co.jp'
   else
     STDERR.puts "no ldap found for #{email}"  
     return nil  # no ldap server to use...
@@ -285,11 +289,11 @@ end
 def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
   logopen 
   p ldap if $deb  
-  if ldap == "ldap.ray.co.jp" then 
+  if ldap == $tldap then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
   else 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
+    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   end
   p auth if $deb 
@@ -304,9 +308,11 @@ def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
         hits+= 1
         if ndattr == "DN" then
 ##          log.warn("ldapvalue: #{ndattr}:DN: #{entry.dn}" ) if $logpath 
+          STDERR.puts entry.dn if $deb
           return entry.dn
         end
 ##        log.warn("ldapvalue: DN: #{entry.dn} #{entry[ndattr][0]}") if $logpath 
+        p entry if $deb
         return entry[ndattr][0]
       end
 ##      log.info(ldap.get_operation_result) if $logpath 
@@ -434,7 +440,7 @@ def getfwd(addr, ldap)
     log = Logger.new($logpath)
     log.level = Logger::INFO
   end 
-  if ldap == "wm2.ray.co.jp" then 
+  if ldap == $uldap then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   else 
@@ -556,10 +562,10 @@ def ldaprplattr(dn, uid, attr, value, ldaphost )
   log = logopen
   oplog = logopenop
   case ldaphost
-  when 'ldap.ray.co.jp' 
+  when $tldap  # 'ldap.ray.co.jp' 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
-  when 'wm2.ray.co.jp'
+  when $uldap # 'wm2.ray.co.jp'
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   end 

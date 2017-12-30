@@ -124,7 +124,7 @@ end
   end
   if (authmode.to_i & 0b1) then
 ## check smtp auth
-    res = smtpcheck( $uid , smtpsrv, passwd , 'ken7wiz@ybb.ne.jp' , 'al', deb, $domain )
+    res = smtpcheck( $uid , smtpsrv, passwd , 'ken@znet.tokyo' , 'al', deb, $domain )
     if res then 
       puts  "#{$uid}:AUTH送信テスト失敗.#{Time.now}"
     else
@@ -133,7 +133,7 @@ end
     end
   end
   if (authmode.to_i & 2) then 
-    res = smtpcheck( $uid , smtpsrv, passwd , 'ken7wiz@ybb.ne.jp' , 'ap', deb, $domain )
+    res = smtpcheck( $uid , smtpsrv, passwd , 'ken@znet.tokyo' , 'ap', deb, $domain )
     if res then 
       puts  "#{$uid}:AUTH送信テスト失敗.#{Time.now}"
     else
@@ -142,7 +142,7 @@ end
     end
   end
   if (authmode.to_i & 4) then 
-    res = smtpcheck( $uid , smtpsrv, passwd , 'ken7wiz@ybb.ne.jp' , 'ac', deb, $domain )
+    res = smtpcheck( $uid , smtpsrv, passwd , 'ken@znet.tokyo' , 'ac', deb, $domain )
     if res then 
       puts  "#{$uid}:AUTH送信テスト失敗.#{Time.now}"
     else
