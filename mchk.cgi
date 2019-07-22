@@ -35,7 +35,7 @@ def sjis_conv(str)
   if ss == nil then
     return nil
   else
-    return str.encode('Shift_JIS')
+    return ss # str.encode('Shift_JIS')
   end
 end
 
@@ -82,14 +82,20 @@ def exit_finish
           $cgi.a("bizmail_ext/#{$bfile2}") { "BizMail Extend Information"  } 
         end +
         $cgi.p do  
-          $cgi.a("dnetbackup/#{$dnfile}") { "desknets account for import"  }
+          $cgi.a("dneobackup/#{$dnfile}") { "desknets account for import"  }
+        end +  
+        $cgi.p do  
+          $cgi.a("jobnet/#{$jbfile}") { "jobnet command file"  }
+        end +  
+        $cgi.p do  
+          $cgi.a("anpi/#{$anpi_file}") { "anpi command file"  }
         end +  
         $cgi.pre() do
           CGI.escapeHTML(
             "params: " + $cgi.params.inspect + "\n" +
             "cookies: " + $cgi.cookies.inspect + "\n" +
             ENV.collect() do |key, value|
-              key + " --> " + value + "\n"
+              aey + " --> " + value + "\n"
             end.join("")
           )
         end
@@ -485,10 +491,19 @@ if ($mode == 1) && $mailok then
   File.write( "./ldifbackup/" +$mail,$ldif) 
 ## print dnet csv
   $dnet = sprintf ("0,0,")
-  $dnet += sprintf("#{$sei}　#{$mei},#{$f_name}　#{$name},#{$shain},#{$passwd},#{$mail},,,,,,,,,,,,,,,,,,,,"",ja_JP,JST,期間外,*173\n" )
-  $dnfile = $mail + "_dnet.csv" 
+  $dnet += sprintf("#{$sei}　#{$mei},#{$f_name}　#{$name},#{$shain},#{$passwd},#{$mail},,,,,,,,,,,,,,,,,,,,"",ja_JP,JST,期間外,,*360\n" )
+  $dnfile = $mail + "_dneo.csv" 
   dnet_s = sjis_conv($dnet) 
-  File.write( "./dnetbackup/" +$dnfile, dnet_s ) 
+  File.write( "./dneobackup/" +$dnfile, dnet_s ) 
+## File to set JOBNET .Xpoint, Anpi  shain name kana email password dept proto-name 入社日
+  $jobnet =  sprintf ("ruby jobnet.rb #{$shain} #{$sei}　#{$mei} #{$f_name}　#{$name} #{$mail} #{$passwd} 管理本部/業務研修 ダミー　太郎 2018/04/01\n")
+  jnet_s = sjis_conv($jobnet)
+  $jbfile = $mail + "_jobnet.csv" 
+  File.write("./jobnet/" + $jbfile, jnet_s) 
+  anpi_com = sprintf("ruby anpi.rb #{$shain} #{$sei}　#{$mei} #{$f_name}　#{$name} #{$mail} 東京都\n")
+  anpi_s = sjis_conv(anpi_com) 
+  $anpi_file = $mail + "_anpi.csv" 
+  File.write( "./anpi/" + $anpi_file, anpi_s )
   ## output file for biz mail 
 #  puts "Written #{$mail}, #{$dnfile}"  
 #  exit  
@@ -499,7 +514,8 @@ if ($mode == 1) && $mailok then
   nm = Moji.hira_to_kata($name) 
   bas = "#{$mail},ユーザー,#{$sei},#{fn},#{$mei},#{nm},#{$passwd},0,0\n"
 #  p bas  
-  bas_s = sjis_conv(bas)
+#  bas_s = sjis_conv(bas)
+  bas_s = bas.encode("Shift_JIS") 
   $bfile1 = $mail + ".csv" 
   File.write("./bizmail_basic/" + $bfile1 , bas_s)
   #       mail    ,  group,  sn,  shain ,    cn ,   desc          pass           
@@ -507,7 +523,8 @@ if ($mode == 1) && $mailok then
 # email, 表示名、Middle,global連動(0), PW変更(0), 説明、備考、郵便番号、都道府県、市町村、住所、国、会社、会社（フリガナ）、役職、電話番号、自宅電話、携帯、ポケットベル、FAX、メールをHTMLで表示(0)、HTHMLメールに外部イメージを表示(0)、新着メール通知アドレスを有効に(0)、新着通知メールアドレス、自動返信メッセージ有効、メール送信許可アドレス１、メール送信許可アドレス２、メール送信許可アドレス３、設定不要、設定不要、転送設定有効、作成メール形式(0:text,1:html)、UIテーマ、メッセ維持のコピーをBOXに残さない、IMAP有効(1),IMAP検索フォルダを表示(0), TZ077,5,0,0,0  
 # 1- 41  
   ext = "#{$mail},#{$sei}　#{$mei},,0,0,,#{$shain},,,,,,,,,,,,,,1,1,0,,0,,,,,,0,1,beach,0,1,0,TZ077,5,0,0,0,0\n" 
-  ext_s = sjis_conv(ext) 
+#  ext_s = sjis_conv(ext) 
+  ext_s = ext.encode("Shift_JIS")  
   $bfile2 = $mail + "_ext.csv" 
   File.write("./bizmail_ext/" + $bfile2 , ext_s)
 ## bizmail end

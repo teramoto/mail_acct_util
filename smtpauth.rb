@@ -17,6 +17,7 @@ $cc = Array.new
 $to = Array.new 
 $gp = Array.new
 $adm = Array.new 
+$port = 25
 passwd = "" 
 name = "" 
 deb = false 
@@ -32,7 +33,7 @@ opt.on('-n VAL', 'supply name manually' ) { |v| name = v }
 opt.on('-p VAL', 'supply password manually') { |v| passwd = v } 
 opt.on('-d', 'debug mode ') { deb = true }
 opt.on('-l VAL', 'which auth to check   ') { |v| authmode = v }
-
+opt.on('--port VAL', 'set port to use.') { |v| $port = v } 
 
 p ARGV
 rr = opt.parse!(ARGV)
@@ -41,6 +42,7 @@ puts "ARGV"
 p ARGV 
 puts "OPTS"
 p OPTS 
+p $port 
 $account = ARGV[0] 
 if $account == nil || $account.length ==0 then 
   puts "Acconut is invalid.(#{$account})" 
@@ -124,7 +126,7 @@ end
   end
   if (authmode.to_i & 0b1) then
 ## check smtp auth
-    res = smtpcheck( $uid , smtpsrv, passwd , 'ken@znet.tokyo' , 'al', deb, $domain )
+    res = smtpcheck( $uid , smtpsrv, passwd , 'ken@znet.tokyo' , 'al', deb, $domain ,$port)
     if res then 
       puts  "#{$uid}:AUTH送信テスト失敗.#{Time.now}"
     else
@@ -133,7 +135,7 @@ end
     end
   end
   if (authmode.to_i & 2) then 
-    res = smtpcheck( $uid , smtpsrv, passwd , 'ken@znet.tokyo' , 'ap', deb, $domain )
+    res = smtpcheck( $uid , smtpsrv, passwd , 'ken@znet.tokyo' , 'ap', deb, $domain ,$port)
     if res then 
       puts  "#{$uid}:AUTH送信テスト失敗.#{Time.now}"
     else
@@ -142,7 +144,7 @@ end
     end
   end
   if (authmode.to_i & 4) then 
-    res = smtpcheck( $uid , smtpsrv, passwd , 'ken@znet.tokyo' , 'ac', deb, $domain )
+    res = smtpcheck( $uid , smtpsrv, passwd , 'ken@znet.tokyo' , 'ac', deb, $domain ,$port)
     if res then 
       puts  "#{$uid}:AUTH送信テスト失敗.#{Time.now}"
     else

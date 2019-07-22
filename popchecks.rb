@@ -11,15 +11,17 @@ require 'yaml'
 # include Term::ANSIColor
 require 'logger'
 
-def smtpcheck(user, server, passwd, to_addr, comm, debug , domain)
+def smtpcheck(user, server, passwd, to_addr, comm, debug , domain, port)
   log = Logger.new('popcheck.log')
   log.level= Logger::INFO
   ret = true
   stat = 0
-  if server == 'mail01.bizmail2.com' then 
-    port = 465
-  else 
-    port = 25
+  if port == 0 then 
+    if server == 'mail01.bizmail2.com' then 
+      port = 465
+    else 
+      port = 25
+    end
   end 
   case comm
   when 'r' 
@@ -45,7 +47,7 @@ def smtpcheck(user, server, passwd, to_addr, comm, debug , domain)
   when 's' 
     puts "SMTP Delivery Check mode"  if debug 
     begin 
-      smtp = Net::SMTP.new(server, 25) 
+      smtp = Net::SMTP.new(server, port) 
       smtp.set_debug_output $stderr if debug 
       smtp.start(server )  
       smtp.send_message  'Test Message', 'ken@ray.co.jp', to_addr 
@@ -65,7 +67,7 @@ def smtpcheck(user, server, passwd, to_addr, comm, debug , domain)
     puts "SMTP Auth Check mode" if debug
     stat = 0 
     begin 
-      smtp = Net::SMTP.new(server, 25) 
+      smtp = Net::SMTP.new(server, port)
       smtp.set_debug_output $stderr if debug
       case comm
       when 'a','al'

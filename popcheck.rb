@@ -24,13 +24,13 @@ p $day2
 #exit  ## for check 
 $DEBUG = nil 
 
-def smtpcheck(user, server, passwd, to_addr, comm)
+def smtpcheck(user, server, passwd, to_addr, comm, port)
   stat = 0
   case comm
   when 's' 
     puts "SMTP Delivery Check mode" 
     begin 
-      smtp = Net::SMTP.new(server, 25) 
+      smtp = Net::SMTP.new(server, port) 
       smtp.set_debug_output $stderr if $DEBUG 
       smtp.start(server )  
       smtp.send_message  'Test Message', 'ken@ray.co.jp', passwd
@@ -49,7 +49,7 @@ def smtpcheck(user, server, passwd, to_addr, comm)
     puts "SMTP Auth Check mode" 
     stat = 0 
     begin 
-      smtp = Net::SMTP.new(server, 25) 
+      smtp = Net::SMTP.new(server, port) 
       smtp.set_debug_output $stderr if $DEBUG 
       smtp.start(server, user , passwd,  :login ) # :login :plain :cram_md5  
       smtp.send_message  'Test Message', "#{user}@ray.co.jp", to_addr
