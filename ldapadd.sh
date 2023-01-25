@@ -9,12 +9,22 @@ usage_exit() {
         exit 1
 }
 
-while getopts wmh:a OPT
+while getopts h:D:p:b:a OPT
 do 
   case $OPT in 
  h) HOST="$OPTARG"
     DARG="cn=Manager,dc=ray,dc=jp"
     BARG="dc=ray,dc=jp"
+    ;;
+ 
+ p) PS=$OPTARG
+    DARG="cn=Manager,dc=ray,dc=jp"
+    BARG="dc=ray,dc=jp"
+    ;;
+ b) BARG=$OPTARG
+    ;;
+
+ D) DARG=$OPTARG
     ;;
 
  \?) usage_exit 

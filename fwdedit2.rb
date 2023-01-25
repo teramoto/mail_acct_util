@@ -13,14 +13,14 @@ usage= "forwardaddress, address to add/del, cmd (add,del,chk)"
 opt  = OptionParser.new(usage=usage)
 OPTS = {}
 Version = '0.2' 
-deb = false 
-opt.on('-d', 'debug mode ') { deb = true }
+$deb = false 
+opt.on('-d', 'debug mode ') { $deb = true }
 $traddr = Array.new
-
-# puts ARGV[0] ,ARGV[1], ARGV[2]
 rr = opt.parse!(ARGV)
 puts ARGV.size 
 p ARGV 
+byebug if $deb 
+puts ARGV[0] ,ARGV[1], ARGV[2] if $deb 
 ARGV.each do |arg|
   p arg
   puts arg.size 
@@ -45,12 +45,12 @@ when 0
   STDERR.puts "need forward address "
   exit -1
 when 1 
-  fwaddr  = $traddr[0]
+  fwaddr  = $traddr.shift
   puts "set fwaddr = #{fwaddr}" 
   modaddr = "   " 
 else
-  fwaddr  = $traddr[0]
-  modaddr = $traddr[1]
+  fwaddr  = $traddr.shift
+  modaddr = $traddr[0]
   puts "set fwaddr = #{fwaddr}" 
 end 
 puts "fwaddr = #{fwaddr}" 
@@ -66,21 +66,28 @@ puts "fwaddr = #{fwaddr}"
 #  puts "unsupported domain #{bb[1]}" 
 #  exit -1 
 #end
+byebug if $deb  
 $ldap1 = getldap(fwaddr) 
 
 if $cmd == nil || $cmd.length < 1 then
   $cmd = "chk" 
 end 
-byebug if deb
+byebug if $deb
 if (result=getfwd(fwaddr, $ldap1)) == true then 
   puts result 
   STDERR.puts "Error:fwd adress #{fwaddr} not exsits."
 else 
-  result = fwedit(fwaddr, $traddr[0], $cmd, $ldap1)
-  puts "result = #{result.join(',')}" 
-  p result if deb
+  if $traddr.include?(fwaddr) then 
+    puts "Looped address, #{fwaddr}, #{$traddr.join(",")}" 
+  else 
+    result = fwedit(fwaddr, $traddr, $cmd, $ldap1)
+    if result then 
+      puts "Success"
+    end
+  end 
+  p result if $deb
 #  1.upto($traddr.size-1) do |tt| 
-#    byebug if deb 
+#    byebug if $deb 
 #    result=  fwedit(fwaddr, $traddr[tt], $cmd, $ldap1)
 #    puts "result =#{result}"  
 #  end

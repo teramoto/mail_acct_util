@@ -99,12 +99,14 @@ end
 # global arrays for domains handled 
 # 
 #  handled by smtp.ray.co.jp
-$tdomain = [ "ray.co.jp" ] 
+# handled by airnet server  
+$tdomain = [ "ray.co.jp", "c.ray.co.jp" ] 
 $tldap = 'ldap.ray.co.jp' 
+
 # handled by sakura server www16276uf.sakura.ne.jp
 $udomain = [ "ss.ray.co.jp" , "nissayseminar.jp", "nissayspeech.jp", "mcray.jp", "lic.prent.jp", "nissay-miraifes.jp" ]
 # $uldap = 'wm2.ray.co.jp'
-$uldap = 'ldap2.ray.co.jp'
+$uldap = 'ldap23.ray.co.jp'
 $vdomain = [ "wes.co.jp" ]  # web areana 
 $wdomain = [ "tc-max.co.jp" ] # kagoya 
 $cdomain = [ "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu"  ]

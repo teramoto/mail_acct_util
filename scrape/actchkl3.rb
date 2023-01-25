@@ -74,6 +74,7 @@ $supress = false
 $passwd = "" 
 $name = "" 
 $deb = false
+# $deb = true
 $ln = false
 $an = false 
 $mail_send = true 
@@ -172,12 +173,14 @@ puts "$mailtest: #{$mailtest}" if $deb
 # $mailtest = false 
 # $supress = false
 
-$bizhost = "mail01.bizmail2.com" 
+# $bizhost = "mail01.bizmail2.com" 
+$bizhost = "mail.ray.co.jp"
+$airhost = "mail.ray.co.jp"
 $pop = {"pop3" => "110", "pop3s(SSLを使用)" => "995" }
 $imap = { "imap" => "143", "imaps(SSLを使用)" => "993" }
-$smtpSend  = {"smtp" => "25" , "smtp" => "587", "smtps(SSLを使用)" => "465"  }
+$smtpSend  = { "smtp(submission)" => "587", "smtps(SSLを使用)" => "465"  }
 $smtpAuth =  [  "PLAIN", "LOGIN" ]
-$imapHost = nil 
+$imapHost = $bizhost 
 # setup server spec parameters.... 
 
 bb = $account.split('@')
@@ -209,16 +212,17 @@ elsif $tdomain.index(bb[1]) then
   $uid  = $account 
   $email = $account 
   $domain = bb[1]
-  $host = "mail01.bizmail2.com" 
-  $smtphost = "mail01.bizmail2.com" 
+  $host = $airhost 
+  $smtphost = "mxin1.airnet.ne.jp" # $airhost
   $ldap = "ldap.ray.co.jp" 
-  $pop = { "pop3s(SSLを使用)" => "995" }
-  $imap = { "imaps(SSLを使用)" => "993" }
-  $smtpSend  = { "smtps(SSLを使用)" => "465"  }
-#  $sendAuth =  { "auth" => "plain", "auth" => "login" } 
-  $webmail = "https://mail01.bizmail2.com"
-  $webmailm = "https://mail01.bizmail2.com/mb" 
-  $webmailsp = "" 
+#  $pop = { "pop3s(SSLを使用)" => "995" }
+#  $imap = { "imaps(SSLを使用)" => "993" }
+#  $smtpSend  = { "smtps(SSLを使用)" => "465"  }
+#  $sendAuth =  { "auth" => "plain", "auth" => "login" } i
+  $webmail   = "Webメールアクセス用URL(自動) :https://mail.ray.co.jp/"
+  $webmailpc  = "Webメールアクセス用URL(PC)  :https://mail.ray.co.jp/am_bin/amlogin"
+  $webmailsp = "Webメールアクセス用URL(スマホ):https://mail.ray.co.jp/am_bin/slogin" 
+  $webmailm = "Webメールアクセス用URL(携帯)  :https://mail.ray.co.jp/am_bin/mlogin" 
 elsif $udomain.index(bb[1]) then
   puts "#{bb[1]}: $udomain" 
 # byebug 
@@ -600,9 +604,11 @@ def body_add( body)
     str = "SMTP認証:" + $smtpAuth.join(',')
     body.push str 
     body.push("-" * 50)
-    body.push("Webメールアクセス用URL     : #{$webmail}") if $webmail != nil 
-    body.push("Webメールアクセス用URL(スマートフォン）#{$webmailsp}") if $webmailsp != nil && $webmailsp.length > 1  
-    body.push("Webメールアクセス用URL(携帯）#{$webmailmb}") if $webmailmb != nil 
+
+    body.push( $webmail ) if $webmail != nil 
+    body.push( $webmailpc ) if $webmailpc != nil 
+    body.push( $webmailsp ) if $webmailsp != nil 
+    body.push( $webmailm ) if $webmailm != nil 
     body.push("社内システム設定マニュアル:#{$manual}") if $manual != nil 
     body.push("メールアプリケーション設定マニュアル:#{$manualm}") if $manualm != nil 
 #byebug
@@ -635,21 +641,22 @@ def body_add( body)
 end 
 def add_mes( )  
   if $intra then
-   `scp ken@intra.ray.co.jp:/var/www/cgi-bin/pass.txt /tmp/` 
-   # `scp root@intra.ray.co.jp:/var/www/cgi-bin/pass.txt /tmp/ ` 
-    if ($shain == nil || $shain.length < 4) then 
-      STDERR.puts("You must supply shain # manually. commnad email shain# ")
-      exit( -1)
-    end  
-    intr  = Array.new 
-    intr.push("イントラログインID:#{$shain}")
-    passread = ""
-    if $passwd != nil then
-      passread = kanayomi($passwd)
-    else
-      passread = ""
-    end
-
+    puts "no mailtest will be done " 
+    `scp ken@intra.ray.co.jp:/var/www/cgi-bin/pass.txt ~/home/ken/tmp/` if $mailtest 
+  # `scp root@intra.ray.co.jp:/var/www/cgi-bin/pass.txt /tmp/ ` 
+     if ($shain == nil || $shain.length < 4) then 
+       STDERR.puts("You must supply shain # manually. commnad email shain# ")
+       exit( -1)     
+     end
+     intr  = Array.new 
+     intr.push("イントラログインID:#{$shain}")
+     passread = ""
+     if $passwd != nil then
+       passread = kanayomi($passwd)
+     else
+       passread = ""
+     end
+  
 
     intr.push("イントラ初期パスワード:#{$passwd}")
     intr.push("(#{passread})") 
@@ -661,7 +668,7 @@ def add_mes( )
     $clist.push($passwd)
 #    $clist.push(passread)
 #     byebug 
-    ps = get_last_line("/tmp/pass.txt")
+    ps = get_last_line("/home/ken/tmp/pass.txt")
     today = Date.today 
     if today.day > 24 then 
       today += 10 
@@ -738,7 +745,7 @@ end
 
 #   mail.charset = 'ISO-2022-JP' 
    mail.charset = 'UTF-8' 
-   mail.from = 'noreply@ray.co.jp'
+   mail.from = 'ken@ray.co.jp'
 #  mail.smtp_envelope_to = 'ken@ray.co.jp'
 #  mail.reply_to = 'loginfo@ray.co.jp' 
 # byebug 

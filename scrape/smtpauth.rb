@@ -68,10 +68,14 @@ elsif $tdomain.index(bb[1]) then
     $uid = $account 
   end 
   $domain = bb[1]
-else 
-  puts "Domain #{bb[1]} is not supported."
-  puts "uid = #{bb[0]}" 
-  exit -1
+elsif ($uid == nil || $uid.length == 0 ) then 
+   puts "uid bot supplied." 
+   exit -1 
+else  
+#  puts "Domain #{bb[1]} is not supported."
+  $domain = bb[1]
+  
+  puts "domain:#{$domain}: uid:#{$uid}"
 end 
 
 puts "Domain #{$domain}."

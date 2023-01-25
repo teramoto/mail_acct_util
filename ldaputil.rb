@@ -123,7 +123,8 @@ def getldap( email )
     return  'ldap.ray.co.jp'
   elsif $udomain.index(ld[1]) then
  #   return  'wm2.ray.co.jp'
-    return  'ldap2.ray.co.jp'
+    #return  'ldap2.ray.co.jp'
+    return  'ldap23.ray.co.jp'
   else 
     return nil  # no ldap server to use...
   end 
@@ -334,7 +335,7 @@ def hasattr(uid,attr, ldap)
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
   else 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
+    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
   end
   hits =0
@@ -420,7 +421,7 @@ def getfwd(addr, ldap)
     log.level = Logger::INFO
   end 
   byebug if $deb 
-  if ldap == "ldap2.ray.co.jp" then 
+  if ldap == "ldap2.ray.co.jp" || ldap == "ldap23.ray.co.jp" then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   else 
@@ -459,6 +460,7 @@ def getfwd(addr, ldap)
     return true
   end 
 #end
+
 #
 # DN エントリーのすべてのデータを表示する。
 # 
@@ -499,6 +501,59 @@ def ldapdisplay(treebase, id, value)
   end
 end 
 
+#
+# dn エントリーを有効化
+# 
+def ldapenable(dn,host, stat)
+  puts "dn = #{dn}" if $deb 
+  if stat == 'true' || stat == 'TRUE' then
+    vl = 'TRUE' 
+  else 
+    vl = 'FALSE'
+  end
+  byebug if $deb
+  dd = dn.split(',') 
+  dd1 = dd[0].split('=') 
+  uid= dd1[1] # 'ken@ss.ray.co.jp' 
+  ldaprplattr(dn, uid, 'accountActive', vl, host ) 
+end 
+
+def ldapenablex(dn,host)
+  puts "dn = #{dn}" if $deb 
+
+  if $logpath then 
+    log = Logger.new($logpath)
+    log.level = Logger::INFO
+  end
+  if $logpathop != nil then 
+    oplog = Logger.new($logpathop)
+    oplog.level = Logger::INFO
+  end
+  if host == 'ldap.ray.co.jp' then  
+    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
+  else 
+    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
+  end 
+  hits =0
+  result = "not executed"
+  puts "dn = #{dn}" if $deb 
+  begin
+    Net::LDAP.open(:host => host ,:port => 389 , :auth => auth  ) do |ldap|
+      p ldap 
+      byebug
+      # filter = Net::LDAP::Filter.eq('mail:', dn)
+      result = ldap.search(:dn =>  dn)  
+      puts result 
+      puts ldap.get_operation_result
+      oplog.info("#{dn} enabled or disabled,") if $logpathop  
+      return result 
+    end
+  rescue => ex
+    log.fatal( ex) if $logpath 
+    return true
+  end
+  puts result  
+end
 
 #
 # dn エントリーを削除
@@ -549,15 +604,20 @@ def ldaprplattr(dn, uid, attr, value, ldaphost )
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
   when 'ldap2.ray.co.jp'
+  when 'ldap23.ray.co.jp'
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=jp"
+  else 
+    raise "error: no ldaphost #{ldaphost}" 
   end 
   hits =0
+  ldapok = false 
   result = "not executed"
   STDERR.puts dn if $deb 
   Net::LDAP.open(:host => ldaphost, :port => 389 , :auth => auth  ) do |ldap|
     STDERR.puts("ldap opend sucessfully") if $deb 
-
+    ldapok = true
+    byebug if $deb 
   #  ,:encryption => :simple_tls # ldap.port = 389 636
     filter = Net::LDAP::Filter.eq('uid', uid)
 #  p filter
@@ -571,11 +631,19 @@ def ldaprplattr(dn, uid, attr, value, ldaphost )
 #      end
       $resdn = entry.dn
     end
+    if ldapok then 
+      byebug if $deb  
+    end
     p $resdn 
+    byebug if $deb  
     puts $resdn 
     puts "#{attr} => #{value}" 
-    result = ldap.replace_attribute($resdn, attr, value)
-    return result 
+    if ($resdn != nil && $resdn.size > 0) then 
+      result = ldap.replace_attribute($resdn, attr, value)
+      return result 
+    else 
+      return nil 
+    end 
   end
   oplog.warn("ldaprplattr :DN: #{$resdn}: #{attr} : #{value} ") if $logpathop
 end
@@ -629,6 +697,7 @@ end
 # edit forwading address.. ( add, del members. )
 # 
 def fwedit(fwaddr, modaddr, cmd , ldsrv )
+  tradd = Array.new 
   if $logpath then 
     log = Logger.new($logpath)
     log.level = Logger::WARN
@@ -649,7 +718,7 @@ def fwedit(fwaddr, modaddr, cmd , ldsrv )
     STDERR.puts "Error: fwedit: modaddr not defined."
     return nil
   end 
-  if ldsrv=="ldap2.ray.co.jp" then 
+  if ldsrv=="ldap2.ray.co.jp" || ldsrv=="ldap23.ray.co.jp" then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password =>"ray00" }
   elsif ldsrv == "ldap.ray.co.jp" then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
@@ -670,7 +739,7 @@ def fwedit(fwaddr, modaddr, cmd , ldsrv )
   #    p filter
         if ldsrv == "ldap.ray.co.jp" then 
           treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
-        elsif ldsrv =="ldap2.ray.co.jp" then 
+        elsif ldsrv =="ldap2.ray.co.jp" || ldsrv="ldap23.ray.co.jp" then 
           treebase = "ou=Mail,dc=ray,dc=jp"
         else 
           STDERR.puts "invalid Ldap server #{ldsrv}" 
@@ -683,9 +752,19 @@ def fwedit(fwaddr, modaddr, cmd , ldsrv )
   #          log.warn("fwedit: entry size =#{entry.size}") if $logpath 
   #        end 
   #      puts entry
+          byebug if $deb 
           $resdn = entry.dn
           $valx = entry['mailForward'][0]
           puts $valx
+          if (sz = entry['mailForward'].size ) > 0 then 
+            0.upto (sz-1) do |nn| 
+              ad1 = entry['mailForward'][nn].split(',')
+              ad1.each do |aa|
+                tradd.push aa
+              end 
+            end 
+            trfin =  tradd.uniq
+          end 
         end
         if $resdn == nil then 
           puts "cannot find entry dn"
@@ -724,10 +803,15 @@ def fwedit(fwaddr, modaddr, cmd , ldsrv )
           return true 
         end
 
-
+        byebug if $deb 
         $valx = $valw.join(',')
-        puts $resdn 
-        result = ldap.replace_attribute $resdn, :mailForward, $valx 
+        puts $resdn  
+        if tradd.size > 0 then 
+          trfin = tradd.uniq 
+          result = ldap.replace_attribute $resdn, :mailForward, trfin
+        else
+          result = ldap.replace_attribute $resdn, :mailForward, $valx 
+        end 
         ##result = ldap.modify :dn => $resdn, :operations => ops 
         p result 
         res1 = ldap.get_operation_result 

@@ -42,7 +42,7 @@ end
 # check and create 
 # todo 
 # check local part for @ray.co.jp and @ss.ray.co.jp 
-#$DEBUG = "9" 
+$DEBUG = "9" 
 def exit_job
 #  $result += $force  
   if $mail && ($mail.index('@') == nil) then 
@@ -308,9 +308,9 @@ def adrcheck(mail)
     $auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     $host = 'ldap.ray.co.jp'
     $treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
-  when  'ldap2.ray.co.jp'
+  when  'ldap2.ray.co.jp','ldap23.ray.co.jp' 
     $auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
-    $host = 'ldap2.ray.co.jp'
+    $host = 'ldap23.ray.co.jp'
     $treebase = "ou=Mail,dc=ray,dc=jp"
   else 
     $result = "ドメイン #{domain}は未対応です。#{$ldap}"
@@ -380,6 +380,7 @@ if b1 != nil then
   r2 =adrcheck(mail2) 
   # both @ray.co.jp & @ss.ray.co.jp is ok
   $resk += "  --  #{$mail}:#{r1}_#{mail2}:#{r2}"
+  # byebug
   puts r1,r1.class, r2, r2.class if $DEBUG != "0"  
   if (r1 >0 || r2 > 0) then
     if ($force != 'on') then 
@@ -416,7 +417,7 @@ if ($mode == 1) && $mailok then
   else
     $domain1 = $domain 
   end 
-  if ($host == 'ldap2.ray.co.jp')  then
+  if ($host == 'ldap2.ray.co.jp') || ($host == 'ldap23.ray.co.jp')  then
     $uid1 = $mail 
     dn = "uid=#{$uid1},ou=Mail,dc=ray,dc=jp"
     attr = {
@@ -477,13 +478,13 @@ if ($mode == 1) && $mailok then
   $ldif += sprintf "mailDir: #{$domain}/#{$uid}/Maildir/\n"
   $ldif += sprintf "mail: #{$mail}\n"
   $ldif += sprintf "mailQuota: 256\n" 
-  unless ($host == 'ldap2.ray.co.jp ') then 
+  unless ($host == 'ldap2.ray.co.jp ') || ( $host == 'ldap23.ray.co.jp') then 
     $ldif += sprintf "accountKind: 1\n"
     $ldif += sprintf "wifiuid: #{$mail}\n"
   end
   $ldif += sprintf "accountActive: TRUE\n"
   $ldif += sprintf "domainName: #{$domain}\n"   
-  if ($host == 'ldap2.ray.co.jp') then 
+  if ($host == 'ldap2.ray.co.jp') || ($host == 'ldap23.ray.co.jp' ) then 
     $ldif += sprintf "transport: virtual\n"
   else 
     $ldif += sprintf "transport: smtp:[vcgw1.ocn.ad.jp]\n"

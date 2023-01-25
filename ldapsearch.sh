@@ -5,11 +5,11 @@ DARG="cn=Manager,dc=ray,dc=co,dc=jp"
 BARG="dc=ray,dc=co,dc=jp" 
 PS="ray00" 
 usage_exit() {
-        echo "Usage: $0 [-w] [-m] [-h host ] filter " 1>&2
+        echo "Usage: $0 [-w] [-m] [-h host ] [-p password ] filter " 1>&2
         exit 1
 }
 
-while getopts wmh:a OPT
+while getopts wmh:p:b:a OPT
 do 
   case $OPT in 
  w) wifi="TRUE" 
@@ -21,8 +21,14 @@ do
 
  h) HOST="$OPTARG"
     DARG="cn=Manager,dc=ray,dc=jp"
-    PS="ray00" 
     BARG="dc=ray,dc=jp"
+    ;;
+ 
+ p) PS=$OPTARG 
+    DARG="cn=Manager,dc=ray,dc=jp" 
+    BARD="dc=ray,dc=jp" 
+    ;; 
+ b) BARG="$OPTARG" 
     ;;
 
  \?) usage_exit 

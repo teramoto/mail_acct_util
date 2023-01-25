@@ -35,7 +35,7 @@ def getpass_from_file(email,file,domain)
 #  p csv  
   puts csv.size , csv.length 
 #  puts csv.join(',')
-#  byebug 
+  # byebug if $deb 
   if domain == "tc-max.co.jp" then
     ip = 0  # index for password 
     iem = 1 # index for email
@@ -52,13 +52,16 @@ def getpass_from_file(email,file,domain)
         return csv[i][ip] 
       end   
     end 
-  else 
+  elsif domain == 'c.ray.co.jp' then  
     csv.size.times do |i|
       if (csv[i][iem] == email) then 
         puts "Password=#{csv[i][ip]}" if $deb  
         return csv[i][ip] 
       end   
-    end 
+    end
+  else 
+    puts "Unsupported domain #{domain}" 
+    return false 
   end 
 #  csv.eachline do |line|
 #    puts line 
