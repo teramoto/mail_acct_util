@@ -305,10 +305,21 @@ def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
         hits+= 1
         if ndattr == "DN" then
 ##          log.warn("ldapvalue: #{ndattr}:DN: #{entry.dn}" ) if $logpath 
+          if $deb then 
+            entry.each do |dn| 
+              puts dn
+            end
+          end 
           return entry.dn
-        end
+        else  
 ##        log.warn("ldapvalue: DN: #{entry.dn} #{entry[ndattr][0]}") if $logpath 
-        return entry[ndattr][0]
+          if $deb then
+            entry.each do |dn| 
+              puts "#{dn}:#{entry[dn]}" 
+            end
+          end 
+          return entry[ndattr][0]  # return only 1st entry. ## check! 
+        end 
       end
 ##      log.info(ldap.get_operation_result) if $logpath 
     end
@@ -364,8 +375,9 @@ def getpass(email)
   ldap = getldap(email)
   if  ldap == true then 
     return true 
-  else 
-    return ldapvalue( 'mail', email , 'userPassword', ldap)
+  else
+    vl =  ldapvalue( 'mail', email , 'userPassword', ldap)
+    return vl 
   end 
 end
 #
@@ -420,7 +432,7 @@ def getfwd(addr, ldap)
     log = Logger.new($logpath)
     log.level = Logger::INFO
   end 
-  byebug if $deb 
+  # byebug if $deb 
   if ldap == "ldap2.ray.co.jp" || ldap == "ldap23.ray.co.jp" then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=jp"
@@ -511,7 +523,7 @@ def ldapenable(dn,host, stat)
   else 
     vl = 'FALSE'
   end
-  byebug if $deb
+  # byebug if $deb
   dd = dn.split(',') 
   dd1 = dd[0].split('=') 
   uid= dd1[1] # 'ken@ss.ray.co.jp' 
@@ -540,7 +552,7 @@ def ldapenablex(dn,host)
   begin
     Net::LDAP.open(:host => host ,:port => 389 , :auth => auth  ) do |ldap|
       p ldap 
-      byebug
+      # byebug
       # filter = Net::LDAP::Filter.eq('mail:', dn)
       result = ldap.search(:dn =>  dn)  
       puts result 
@@ -739,7 +751,7 @@ def fwedit(fwaddr, modaddr, cmd , ldsrv )
   #    p filter
         if ldsrv == "ldap.ray.co.jp" then 
           treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
-        elsif ldsrv =="ldap2.ray.co.jp" || ldsrv="ldap23.ray.co.jp" then 
+        elsif ldsrv =="ldap2.ray.co.jp" || ldsrv=="ldap23.ray.co.jp" then 
           treebase = "ou=Mail,dc=ray,dc=jp"
         else 
           STDERR.puts "invalid Ldap server #{ldsrv}" 

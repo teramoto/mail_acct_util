@@ -126,7 +126,8 @@ def popcheck(user, server, passwd, comm )
   end
 end
 
-def popinit
+
+def popinit 
   $log = Logger.new('popcheck.log')
   $log.level= Logger::INFO
   # print reset;
@@ -139,18 +140,18 @@ def popinit
   p $day2
   #exit  ## for check 
   $DEBUG = nil 
-  
+
   ## main ---
   #exit
   #.divmod(24*60*60)
-end
+end 
 
-def newmain 
-  popinit 
+def newmain
+  popinit  
   STDERR.puts "#{ARGV.size} args "  
   if ARGV.size< 3 then 
-     STDERR.puts "need user, server, passwd"
-     exit(-1)
+    STDERR.puts "need user, server, passwd"
+    exit(-1)
   end
   $argc = 0 
   $comm = 'p' 
@@ -183,9 +184,9 @@ def newmain
         exit -1
       end 
     end
-  }
-   
-  
+  }  
+ 
+
   # print "#{$passwd} #{$user} #{$server}\n"
   begin
     case $comm
@@ -196,8 +197,8 @@ def newmain
     else  
       $res = popcheck($user, $server, $passwd, $comm)
     end 
-    rescue => exp2
-      $log.error("Error: #{$user} #{$server} #{$passwd}:#{exp2}") 
-    end
-  exit(true)
+  rescue => exp2
+    $log.error("Error: #{$user} #{$server} #{$passwd}:#{exp2}") 
+  end
+ exit(true)
 end 
