@@ -106,7 +106,7 @@ $tldap = 'ldap.ray.co.jp'
 # handled by sakura server www16276uf.sakura.ne.jp
 $udomain = [ "ss.ray.co.jp" , "nissayseminar.jp", "nissayspeech.jp", "mcray.jp", "lic.prent.jp", "nissay-miraifes.jp" ]
 # $uldap = 'wm2.ray.co.jp'
-$uldap = 'ldap23.ray.co.jp'
+$uldap = 'ldap2.ray.co.jp'
 $vdomain = [ "wes.co.jp" ]  # web areana 
 $wdomain = [ "tc-max.co.jp" ] # kagoya 
 $cdomain = [ "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu"  ]
@@ -295,7 +295,7 @@ def ldapvalue(attr, val, ndattr, ldap ) ## ou= Mail
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
   else 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
+    auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   end
   p auth if $deb 
@@ -342,7 +342,7 @@ def hasattr(uid,attr, ldap)
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
   else 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
+    auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
   end
   hits =0
@@ -443,7 +443,7 @@ def getfwd(addr, ldap)
     log.level = Logger::INFO
   end 
   if ldap == $uldap then 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
+    auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   else 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
@@ -537,7 +537,7 @@ def ldapdel(dn,host)
   if host == 'ldap.ray.co.jp' then  
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
   else 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
+    auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
   end 
   hits =0
   result = "not executed"
@@ -568,7 +568,7 @@ def ldaprplattr(dn, uid, attr, value, ldaphost )
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
   when $uldap # 'wm2.ray.co.jp'
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "1234" }
+    auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   end 
   hits =0

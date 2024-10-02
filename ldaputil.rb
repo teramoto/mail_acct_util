@@ -103,8 +103,8 @@ end
 #  handled by smtp.ray.co.jp
 $tdomain = [ "ray.co.jp", "plays.co.jp", "digisite.co.jp", "wbc-dvd.com", "tera.nu", "tc-max.co.jp"  ]
 # handled by sakura server www16276uf.sakura.ne.jp
-$udomain = [ "ss.ray.co.jp" , "nissayseminar.jp", "nissayspeech.jp", "mcray.jp", "lic.prent.jp","nissay-miraifes.jp" ]
-$vdomain = [ "wes.co.jp" ]  # web areana 
+$udomain = [ "ss.ray.co.jp" , "wes.co.jp" , "nissayseminar.jp", "nissayspeech.jp", "mcray.jp", "lic.prent.jp","nissay-miraifes.jp" ]
+$vdomain = [ "" ]  # web areana 
 $wdomain = [ "tc-max.co.jp" ] 
 $cdomain = [ "ray.co.jp" , "digisite.co.jp", "plays.co.jp" ]
 #
@@ -123,8 +123,8 @@ def getldap( email )
     return  'ldap.ray.co.jp'
   elsif $udomain.index(ld[1]) then
  #   return  'wm2.ray.co.jp'
-    #return  'ldap2.ray.co.jp'
-    return  'ldap23.ray.co.jp'
+    return  'ldap2.ray.co.jp'
+    # return  'ldap23.ray.co.jp'
   else 
     return nil  # no ldap server to use...
   end 
@@ -237,8 +237,8 @@ def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, 
       :mailQuota => '256' , 
       :accountKind => actkind ,
       :mailForward => traddr, 
-      :wifiuid => mail ,
-      :accountActive => "TRUE",
+   #   :wifiuid => mail ,
+     :accountActive => "TRUE",
       :domainName => domain,  
       :transport => 'virtual'
     }
@@ -257,7 +257,7 @@ def ldapout(uid, mail, passwd, sei, mei, domain, f_name, name, shain , actkind, 
     ldif += sprintf "mailQuota: 256\n" 
     ldif += sprintf "accountKind: #{actkind}\n"
     ldif += sprintf "mailForward: #{traddr}\n" if actkind != "1" 
-    ldif += sprintf "wifiuid: #{mail}\n"
+    # ldif += sprintf "wifiuid: #{mail}\n"
     ldif += sprintf "accountActive: TRUE\n"
     ldif += sprintf "domainName: #{domain}\n"   
     ldif += sprintf "transport: virtual\n"
@@ -434,7 +434,7 @@ def getfwd(addr, ldap)
   end 
   # byebug if $deb 
   if ldap == "ldap2.ray.co.jp" || ldap == "ldap23.ray.co.jp" then 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
+    auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   else 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
@@ -544,7 +544,7 @@ def ldapenablex(dn,host)
   if host == 'ldap.ray.co.jp' then  
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
   else 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
+    auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
   end 
   hits =0
   result = "not executed"
@@ -583,7 +583,7 @@ def ldapdel(dn,host)
   if host == 'ldap.ray.co.jp' then  
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
   else 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
+    auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
   end 
   hits =0
   result = "not executed"
@@ -617,7 +617,7 @@ def ldaprplattr(dn, uid, attr, value, ldaphost )
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
   when 'ldap2.ray.co.jp'
   when 'ldap23.ray.co.jp'
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
+    auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   else 
     raise "error: no ldaphost #{ldaphost}" 
@@ -731,7 +731,7 @@ def fwedit(fwaddr, modaddr, cmd , ldsrv )
     return nil
   end 
   if ldsrv=="ldap2.ray.co.jp" || ldsrv=="ldap23.ray.co.jp" then 
-    auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password =>"ray00" }
+    auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password =>"ji96JBCgD77" }
   elsif ldsrv == "ldap.ray.co.jp" then 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
   else

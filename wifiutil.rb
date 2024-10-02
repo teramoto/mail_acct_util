@@ -170,7 +170,7 @@ def sendm( toaddr, dept, mes )
   p mess1 if $DEBUG
   mail = Mail.new
   mail.charset = 'ISO-2022-JP'
-  mail.from = 'RayGroup Networkteam<noreply@ray.co.jp>'
+  mail.from = 'RayGroup Networkteam<support@ray.co.jp>'
   if $DEBUG then
     mail.to = 'ken@ray.co.jp'
   else

@@ -13,8 +13,9 @@ while getopts h:D:p:b:a OPT
 do 
   case $OPT in 
  h) HOST="$OPTARG"
-    DARG="cn=Manager,dc=ray,dc=jp"
+    DARG="cn=admin,dc=ray,dc=jp"
     BARG="dc=ray,dc=jp"
+    PS="ji96JBCgD77" 
     ;;
  
  p) PS=$OPTARG

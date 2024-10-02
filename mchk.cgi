@@ -309,14 +309,14 @@ def adrcheck(mail)
     $host = 'ldap.ray.co.jp'
     $treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
   when  'ldap2.ray.co.jp','ldap23.ray.co.jp' 
-    $auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=jp", :password => "ray00" }
+    $auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
     $host = 'ldap23.ray.co.jp'
     $treebase = "ou=Mail,dc=ray,dc=jp"
   else 
     $result = "ドメイン #{domain}は未対応です。#{$ldap}"
     $mailok = false
     $host = nil 
-    return
+    return 0 
   end 
   if $host == nil || $host.length < 1 then  
     return 0
@@ -366,6 +366,7 @@ def adrcheck(mail)
     $resk +=  "#{target}_is_OK.#{hits}"  
     return hits 
   end
+  return 0 
 end  ## adrcheck end 
 #byebug
 r1=adrcheck($mail)
@@ -380,7 +381,7 @@ if b1 != nil then
   r2 =adrcheck(mail2) 
   # both @ray.co.jp & @ss.ray.co.jp is ok
   $resk += "  --  #{$mail}:#{r1}_#{mail2}:#{r2}"
-  # byebug
+  #  byebug
   puts r1,r1.class, r2, r2.class if $DEBUG != "0"  
   if (r1 >0 || r2 > 0) then
     if ($force != 'on') then 
@@ -461,7 +462,8 @@ if ($mode == 1) && $mailok then
      :accountActive => "TRUE",
      :domainName => $domain,  
 #     :transport => 'virtual'
-     :transport => 'smtp:[vcgw1.ocn.ad.jp]'
+#     :transport => 'smtp:[vcgw1.ocn.ad.jp]'
+     :transport => "smtp:[smtp.#{$domain}"
     }
   end 
 #  p attr 
@@ -487,7 +489,7 @@ if ($mode == 1) && $mailok then
   if ($host == 'ldap2.ray.co.jp') || ($host == 'ldap23.ray.co.jp' ) then 
     $ldif += sprintf "transport: virtual\n"
   else 
-    $ldif += sprintf "transport: smtp:[vcgw1.ocn.ad.jp]\n"
+    $ldif += sprintf "transport: smtp:[sk1.ray.co.jp]\n"
   end 
   File.write( "./ldifbackup/" +$mail,$ldif) 
 ## print dnet csv

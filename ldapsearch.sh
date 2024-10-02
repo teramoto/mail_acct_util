@@ -5,7 +5,7 @@ DARG="cn=Manager,dc=ray,dc=co,dc=jp"
 BARG="dc=ray,dc=co,dc=jp" 
 PS="ray00" 
 usage_exit() {
-        echo "Usage: $0 [-w] [-m] [-h host ] [-p password ] filter " 1>&2
+        echo "Usage: $0 [-w] [-m] [-H ldapURI ] [-p password ] filter " 1>&2
         exit 1
 }
 
@@ -20,7 +20,8 @@ do
     ;;
 
  h) HOST="$OPTARG"
-    DARG="cn=Manager,dc=ray,dc=jp"
+    PS="TaKa1na1d7e" 
+    DARG="cn=readonly,dc=ray,dc=jp"
     BARG="dc=ray,dc=jp"
     ;;
  
@@ -45,9 +46,9 @@ if [ "$wifi" = "TRUE" ]; then
 elif [ "$mail" = "TRUE" ]; then 
   echo "Processing mail accounts...." 
   BARG="ou=Mail,dc=ray,dc=co,dc=jp" 
-  echo "ldapsearch -x -D $DARG  -h $HOST -w $PS -b $BARG $1"
-  ldapsearch -x -D $DARG -h $HOST -w $PS -b $BARG $1
+  echo "ldapsearch -x -D $DARG  -H $HOST -w $PS -b $BARG $1"
+  ldapsearch -x -D $DARG -H $HOST -w $PS -b $BARG $1
 else 
-  echo "ldapsearch -x -D $DARG  -h $HOST -w $PS -b $BARG $1"
+  echo "ldapsearch -x -D $DARG -H $HOST -w $PS -b $BARG $1"
   ldapsearch -x -D $DARG -h $HOST -w $PS -b $BARG $1
 fi  

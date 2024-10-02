@@ -147,9 +147,9 @@ def popcheck(user, server, passwd, comm , ssl )
     if pp != nil  then  
        $stderr.puts "POP Login Success:#{user}" if fdebug  
        return false
-     else
+    else
        return true
-     end 
+    end 
   rescue => ex 
     p ex 
     return true
