@@ -58,7 +58,7 @@ def exit_job
 #      $mail += $domain
 #      puts "mail :#{$mail}" if $DEBUG  
 #    end   
-  redirect_url = 'mchk.rhtml' + '?' + "result=#{$resk}__#{$result}&email=#{$mail}&domain=#{$domain}&shain=#{$shain}&passwd=#{$passwd}&mei=#{$mei}&sei=#{$sei}&name=#{$name}&f_name=#{$f_name}&force=#{$force}" 
+  redirect_url = 'mchk.rhtml' + '?' + "result=#{$resk}__#{$result}&email=#{$mail}&domain=#{$domain}&shain=#{$shain}&passwd=#{$passwd}&mei=#{$mei}&sei=#{$sei}&name=#{$name}&f_name=#{$f_name}&remark=#{$remark}&validFrom=#{$vFrom}&validUntil=#{$vUntil}&force=#{$force}" 
 
   ## $log.warn( cgi.header({ 'status' => 'REDIRECT', 'Location' => redirect_url} ))
   print $cgi.header({ 'status' => 'REDIRECT', 'Location' => redirect_url} )
@@ -95,7 +95,7 @@ def exit_finish
             "params: " + $cgi.params.inspect + "\n" +
             "cookies: " + $cgi.cookies.inspect + "\n" +
             ENV.collect() do |key, value|
-              aey + " --> " + value + "\n"
+              key + " --> " + value + "\n"
             end.join("")
           )
         end
@@ -137,6 +137,9 @@ if $DEBUG == "1" then
   $name="あつこ"
   $f_name="まえだ"
   $check = ""
+  $remark = "備考欄"
+  $vFrom  = "運用開始日"
+  $vUntil = "運用終了日"
 elsif $DEBUG == "2" then 
 #$mail = ARGV[0] 
   $mail   = $cgi['email'] 
@@ -150,6 +153,9 @@ elsif $DEBUG == "2" then
   $check  = $cgi['check'] 
   $create = $cgi['create']
   $reset  = $cgi['reset']
+  $remark = $cgi['remark']
+  $vFrom  = $cgi['validFrom']
+  $vUntil = $cgi['validUntil']
 else 
 #$mail = ARGV[0] 
   $mail   = $cgi['email'] 
@@ -163,6 +169,9 @@ else
   $check  = $cgi['check'] 
   $create = $cgi['create']
   $reset  = $cgi['reset']
+  $remark = $cgi['remark']
+  $vFrom  = $cgi['validFrom']
+  $vUntil = $cgi['validUntil']
 end
 $err = 0
 if $result == nil then 
@@ -267,6 +276,9 @@ elsif $reset.length > 1 then
   $f_name =""
   $resk = "" 
   $result = "Reset Complete." 
+  $remark = ""
+  $vFrom = "" 
+  $vUntil = "" 
   exit_job 
   exit 
 else 
@@ -302,7 +314,7 @@ def adrcheck(mail)
   end 
   # decide parameters for each ldap server 
   $ldap = getldap(mail)
-#  puts "<#{$ldap}>"  
+  puts "<#{$ldap}>" if $debug 
   case $ldap 
   when 'ldap.ray.co.jp' 
     $auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
@@ -310,7 +322,7 @@ def adrcheck(mail)
     $treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
   when  'ldap2.ray.co.jp','ldap23.ray.co.jp' 
     $auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
-    $host = 'ldap23.ray.co.jp'
+    $host = 'ldap2.ray.co.jp'
     $treebase = "ou=Mail,dc=ray,dc=jp"
   else 
     $result = "ドメイン #{domain}は未対応です。#{$ldap}"
@@ -436,7 +448,10 @@ if ($mode == 1) && $mailok then
      # skip wifiuid ,  AccountKind 
      :accountActive => "TRUE",
      :domainName => $domain,  
-     :transport => 'virtual'
+     :transport => 'virtual',
+     :remark => $remark,
+     :validFrom => $vFrom, 
+     :validUntil => $vUntil 
     }
   else 
     if $domain == 'ray.co.jp' then 
@@ -458,12 +473,14 @@ if ($mode == 1) && $mailok then
      :mail => $mail ,
      :mailQuota => '256' , 
      :accountKind => '1',
-     :wifiuid => $mail ,
      :accountActive => "TRUE",
      :domainName => $domain,  
 #     :transport => 'virtual'
 #     :transport => 'smtp:[vcgw1.ocn.ad.jp]'
      :transport => "smtp:[smtp.#{$domain}"
+#     :remark => $remark
+#     :validFrom => '',
+#     :validUntil => '' 
     }
   end 
 #  p attr 
@@ -482,10 +499,12 @@ if ($mode == 1) && $mailok then
   $ldif += sprintf "mailQuota: 256\n" 
   unless ($host == 'ldap2.ray.co.jp ') || ( $host == 'ldap23.ray.co.jp') then 
     $ldif += sprintf "accountKind: 1\n"
-    $ldif += sprintf "wifiuid: #{$mail}\n"
   end
   $ldif += sprintf "accountActive: TRUE\n"
   $ldif += sprintf "domainName: #{$domain}\n"   
+  $ldif += sprintf "remark: #{$remark}\n"   
+  $ldif += sprintf "validFrom: #{$vFrom}\n"   
+  $ldif += sprintf "validUntil: #{$vUntil}\n"   
   if ($host == 'ldap2.ray.co.jp') || ($host == 'ldap23.ray.co.jp' ) then 
     $ldif += sprintf "transport: virtual\n"
   else 
@@ -547,4 +566,4 @@ if ($mode == 1) && $mailok then
 else 
   exit_job
   exit 
-end 
+end
