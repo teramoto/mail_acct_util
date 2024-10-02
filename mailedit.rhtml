@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<!--[if IE 8]> 				 <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>メールアカウント管理</title>
+
+  <link rel="stylesheet" href="css/normalize.css" />
+  
+  <link rel="stylesheet" href="css/foundation.css" />
+
+  <script src="js/vendor/custom.modernizr.js"></script>
+
+</head>
+<body>
+<% # encoding : UTF-8 %>
+
+<% require 'net/ldap' %>
+<% require 'cgi' %>
+<% require 'cgi/session' %>
+<% require '/var/www/html/foundation-4/admin/ldaputil.rb' %>
+
+<% $name = "テスト" %>
+<% cgi = CGI.new %>
+<% $mei = cgi['mei'] %>
+<% $sei = cgi['sei'] %>
+<% $name = cgi['name'] %>
+<% $result = cgi['result'] %>
+<% $email = cgi['email'] %>
+<% $domain = cgi['domain'] %>
+<% $passwd = cgi['passwd'] %>
+<% $shain = cgi['shain'] %>
+<% $f_name = cgi['f_name'] %> 
+<% ldap = Net::LDAP.new( :host => 'ldap.ray.co.jp', :port=>389, :base => "ou=Mail,dc=ray,dc=co,dc=jp", :auth => { :username =>"cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" , :method => :simple} ) %>
+<% if ldap.bind then %>
+<%= "<p>connected</p>" %>
+<% else %>
+<%= "<p>Failed</p>" %> 
+<% end %> 
+  <div class="row">
+    <div class="row"?>
+      <% filter = Net::LDAP::Filter.eq("accountKind", "2") %>
+      <div class=twelve columns">
+        <table>
+          <tr>
+            <th>mail address</th><th>転送先</th>
+          </tr>
+          <% ldap.search(:filter => filter ) do |entry| %>
+          <tr>
+          <td>
+          <% entry['mail'].each do |value| %>
+            <%= sprintf("<a href=\"tredit.cgi?cmd=delete&addr=#{value}\"><削除></a><a href=\"tredit.cgi?cmd=delete&addr=#{value}\"><編集></a>#{value}" ) %>
+          <% end %>
+          </td>
+          <td>
+          <% entry['mailForward'].each do |value|  %>
+            <% vvl = value.split(',') %>
+            <% vvl.each do |vv| %> 
+              <% emexist = emcheck(vv) %>
+              <% if emexist == nil then %>
+                <% acolor = "<span style=\"color:blue\">" %>
+                <% bcolor = "</span>" %>
+              <% elsif emexist == true then %>
+                <% acolor = "<span style=\"color:red\">" %>
+                <% bcolor = "</span>" %>
+              <% else %>
+                <% acolor = "<span style=\"color:black\">" %>
+                <% bcolor = "</span>" %>
+              <% end %>
+              <%= sprintf( "#{acolor}#{vv}#{bcolor}" ) %>
+            <% end %>
+          <% end %>
+          </td>
+          </tr>
+        <% end %>
+      </div>
+    </div>  
+  </div>  
+
+  <!-- Included JS Files (Uncompressed) -->
+  <!--
+  
+  <script src="javascripts/modernizr.foundation.js"></script>
+  
+  <script src="javascripts/jquery.js"></script>
+  
+  <script src="javascripts/jquery.foundation.mediaQueryToggle.js"></script>
+  
+  <script src="javascripts/jquery.foundation.reveal.js"></script>
+  
+  <script src="javascripts/jquery.foundation.orbit.js"></script>
+  
+  <script src="javascripts/jquery.foundation.navigation.js"></script>
+  
+  <script src="javascripts/jquery.foundation.buttons.js"></script>
+  
+  <script src="javascripts/jquery.foundation.tabs.js"></script>
+  
+  <script src="javascripts/jquery.foundation.forms.js"></script>
+  
+  <script src="javascripts/jquery.foundation.tooltips.js"></script>
+  
+  <script src="javascripts/jquery.foundation.accordion.js"></script>
+  
+  <script src="javascripts/jquery.placeholder.js"></script>
+  
+  <script src="javascripts/jquery.foundation.alerts.js"></script>
+  
+  -->
+  
+  <!-- Included JS Files (Compressed) -->
+  <script src="javascripts/foundation.min.js"></script>
+  
+  <!-- Initialize JS Plugins -->
+  <script src="javascripts/app.js"></script>
+</body>
+</html>

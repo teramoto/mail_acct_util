@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<!--[if IE 8]> 				 <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>メール作成完了</title>
+
+  <link rel="stylesheet" href="../css/normalize.css" />
+  
+  <link rel="stylesheet" href="../css/foundation.css" />
+
+  <script src="../js/vendor/custom.modernizr.js"></script>
+
+</head>
+<body>
+<!--% # encoding : utf-8 %-->
+<% # -*- encoding: utf-8 -*- %>
+<% require 'cgi' %>
+<% require 'cgi/session' %>
+<% $name = "テスト" %>
+<% cgi = CGI.new %>
+<% $mei = cgi['mei'] %>
+<% $sei = cgi['sei'] %>
+<% $name = cgi['name'] %>
+<% $result = cgi['result'] %>
+<% $email = cgi['email'] %>
+<% $domain = cgi['domain'] %>
+<% $passwd = cgi['passwd'] %>
+<% $shain = cgi['shain'] %>
+<% $f_name = cgi['f_name'] %> 
+  <div class="row">
+    <div class="twelve columns">
+      <h2>社員情報</h2>
+      <hr />
+      <p>TEST<%= $result + $domain %></p> 
+      <hr />
+    </div>
+    <div class="row"?>
+      <div class=twelve columns">
+      </div>
+    </div>  
+  </div>  
+  <form id="shain" method="get" action="mchk.cgi">
+    <fieldset>
+      <legend>メールアドレスチェック</legend>
+      <div class="row">
+        <div class="large-4 columns">
+          <label>姓</label>
+          <input  type="text" name="sei" value="<%= $sei %>" placeholder="山田" />
+        </div>
+        <div class="large-4 columns">
+          <label>名</label>
+          <input type="text" name="mei" value="<%= $mei %>" /> 
+        </div>
+      </div> 
+      <div class="row">
+        <div class="large-4 columns">
+          <label>せい</label>
+          <input type="text" value="<%= $f_name %>" name="f_name" placeholder="やまだ" />
+        </div>
+        <div class="large-4 columns">
+          <label>めい</label>
+          <input type="text" name="name" value="<%= $name %>" /> 
+        </div>
+      </div>
+      <div class="row">
+        <div class="large-4 columns">
+          <label>email:</label>
+          <input type="text" name="email" value="<%= $email %>"/>
+        </div>
+        <div class="large-4 columns">
+        <label for="shain;">メールドメイン：</label>
+        <select id="domain" name="domain" selected="<%=$domain %>" >
+          <option value="ray.co.jp">ray.co.jp</option>
+          <option value="wes.co.jp">wes.co.jp</option>
+          <option value="tc-max.co.jp">tc-max.co.jp</option>
+          <option value="plays.co.jp" selected>plays.co.jp</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="large-4 columns">社員番号
+          <input type="text" name="shain" value="<%= $shain %>" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="large-4 columns">
+          <label>パスワード:</label>
+          <input type="text" name="passwd"  class="three" value="<%=$passwd %>" /> 
+          <input type="submit" value="submit">
+        </div>
+      </div>
+    </fieldset>
+  </form>
+  <form id="shain" method="get" action="mcreate.cgi">
+     <input type="hidden" name="email" value="<%= $email%>" />  
+     <input type="hidden" name="domain" value="<%= $domain%>" />  
+     <input type="hidden" name="shain" value="<%= $shain%>" />  
+     <input type="hidden" name="passwd" value="<%= $passwd%>" />  
+     <input type="hidden" name="f_nmae" value="<%= $f_name%>" />  
+      <input type="hidden" name="f_nmae" value="<%= $name%>" />  
+     <input type="submit" value="作成">
+  </form>
+
+
+  <!-- Included JS Files (Uncompressed) -->
+  <!--
+  
+  <script src="../javascripts/modernizr.foundation.js"></script>
+  
+  <script src="../javascripts/jquery.js"></script>
+  
+  <script src="../javascripts/jquery.foundation.mediaQueryToggle.js"></script>
+  
+  <script src="../javascripts/jquery.foundation.reveal.js"></script>
+  
+  <script src="../javascripts/jquery.foundation.orbit.js"></script>
+  
+  <script src="../javascripts/jquery.foundation.navigation.js"></script>
+  
+  <script src="../javascripts/jquery.foundation.buttons.js"></script>
+  
+  <script src="../javascripts/jquery.foundation.tabs.js"></script>
+  
+  <script src="../javascripts/jquery.foundation.forms.js"></script>
+  
+  <script src="../javascripts/jquery.foundation.tooltips.js"></script>
+  
+  <script src="../javascripts/jquery.foundation.accordion.js"></script>
+  
+  <script src="../javascripts/jquery.placeholder.js"></script>
+  
+  <script src="../javascripts/jquery.foundation.alerts.js"></script>
+  
+  -->
+  
+  <!-- Included JS Files (Compressed) -->
+  <script src="../javascripts/foundation.min.js"></script>
+  
+  <!-- Initialize JS Plugins -->
+  <script src="../javascripts/app.js"></script>
+</body>
+</html>
