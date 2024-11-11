@@ -615,8 +615,7 @@ def ldaprplattr(dn, uid, attr, value, ldaphost )
   when 'ldap.ray.co.jp' 
     auth = { :method => :simple, :username => "cn=Manager,dc=ray,dc=co,dc=jp", :password => "ray00" }
     treebase = "ou=Mail,dc=ray,dc=co,dc=jp"
-  when 'ldap2.ray.co.jp'
-  when 'ldap23.ray.co.jp'
+  when 'ldap23.ray.co.jp',"ldap2.ray.co.jp"
     auth = { :method => :simple, :username => "cn=admin,dc=ray,dc=jp", :password => "ji96JBCgD77" }
     treebase = "ou=Mail,dc=ray,dc=jp"
   else 
