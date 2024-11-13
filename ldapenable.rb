@@ -66,8 +66,7 @@ else
   case ldap
   when 'ldap.ray.co.jp'
     ldapenable("uid=#{email},ou=Mail,dc=ray,dc=co,dc=jp", ldap, $val)
-  when 'ldap2.ray.co.jpi'
-  when 'ldap23.ray.co.jp' 
+  when 'ldap2.ray.co.jp', 'ldap23.ray.co.jp' 
     ldapenable("uid=#{email},ou=Mail,dc=ray,dc=jp", ldap, $val)
   else 
     STDERR.puts("ldap server error.")
